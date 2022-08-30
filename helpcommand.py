@@ -96,7 +96,7 @@ class HelpCommand(commands.Cog, name="Help Command"):
                             paramtext.append(f"**{paramname}** - 'No description'")
                         else:
                             # optional argument (param has a default value)
-                            if paramdefault:
+                            if paramdefault is not None:
                                 pend = f" (optional, defaults to `{paramdefault}`)"
                             elif flagparam:
                                 pend = f" (optional)"
@@ -114,7 +114,7 @@ class HelpCommand(commands.Cog, name="Help Command"):
                             addparam(name, val.default, True)
                     else:
                         # otherwise, just do it normally
-                        addparam(param.name, param.default != param.empty)
+                        addparam(param.name, param.default if param.default != param.empty else None)
                 # if there are params found
                 if len(paramtext):
                     # join list and add to help
@@ -126,7 +126,7 @@ class HelpCommand(commands.Cog, name="Help Command"):
                                                               "if you wanted to specify `limit` as `10`, "
                                                               "you would run `m.examplecommand limit: 10`.",
                                     inline=False)
-                if docstring.returns:
+                if docstring.returns and docstring.returns.description:
                     embed.add_field(name="Returns", value=docstring.returns.description, inline=False)
             else:
                 # if no docstring

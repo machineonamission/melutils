@@ -20,6 +20,7 @@ from funcommands import FunCommands
 from funnybanner import FunnyBanner
 from gatekeep import GateKeep
 from helpcommand import HelpCommand
+from imagesetcog import ImageSetCog
 from macro import MacroCog
 from moderation import ModerationCog
 from modlog import ModLogInitCog
@@ -115,6 +116,7 @@ class MyBot(commands.Bot):
         await bot.add_cog(ExperienceCog(bot))
         await bot.add_cog(GateKeep(bot))
         await bot.add_cog(BibleCog(bot))
+        await bot.add_cog(ImageSetCog(bot))
         await scheduler.start()
 
 

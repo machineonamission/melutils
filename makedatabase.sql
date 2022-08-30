@@ -12,9 +12,9 @@ create table auto_punishment
 
 create table auto_reactions
 (
-    guild            int not null,
-    channel          int not null,
-    emoji            int not null,
+    guild            int                not null,
+    channel          int                not null,
+    emoji            int                not null,
     react_to_threads bool default false not null
 );
 
@@ -46,11 +46,32 @@ create table experience
 
 create table guild_xp_exclusions
 (
-    guild         integer not null,
-    userorchannel integer not null,
+    guild         integer            not null,
+    userorchannel integer            not null,
     mod_set       bool default false not null,
     constraint guild_xp_exclusions_pk
         primary key (guild, userorchannel)
+);
+
+create table imageset_channels
+(
+    guild      integer not null,
+    channel    integer not null,
+    hashmethod integer not null,
+    hashsize   integer not null,
+    hashdiff   integer not null,
+    constraint key_name
+        primary key (guild, channel)
+);
+
+create table imageset_hashes
+(
+    guild   integer not null,
+    channel integer not null,
+    message integer not null,
+    att_id  integer not null,
+    att_url integer not null,
+    hash    text
 );
 
 create table lockedchannelperms
@@ -130,15 +151,15 @@ create table thin_ice
 
 create table warnings
 (
-    server      int      not null,
-    user        int      not null,
-    issuedby    DATETIME not null,
-    issuedat    DATETIME not null,
+    server      int                                   not null,
+    user        int                                   not null,
+    issuedby    DATETIME                              not null,
+    issuedat    DATETIME                              not null,
     reason      TEXT    default 'No reason provided.' not null,
     id          integer
         constraint warnings_pk
             primary key autoincrement,
-    deactivated BOOLEAN default 0 not null,
-    points      float   default 1 not null
+    deactivated BOOLEAN default 0                     not null,
+    points      float   default 1                     not null
 );
 
