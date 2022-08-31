@@ -1,4 +1,3 @@
--- we don't know how to generate root <with-no-name> (class Root) :(
 create table auto_punishment
 (
     guild               int  not null,
@@ -55,23 +54,28 @@ create table guild_xp_exclusions
 
 create table imageset_channels
 (
-    guild      integer not null,
-    channel    integer not null,
-    hashmethod integer not null,
-    hashsize   integer not null,
-    hashdiff   integer not null,
+    guild              integer not null,
+    channel            integer not null,
+    hashsize           integer not null,
+    hashdiff           integer not null,
+    duplicate_behavior text,
     constraint key_name
         primary key (guild, channel)
 );
 
 create table imageset_hashes
 (
-    guild   integer not null,
-    channel integer not null,
-    message integer not null,
-    att_id  integer not null,
-    att_url integer not null,
-    hash    text
+    guild        integer not null,
+    channel      integer not null,
+    message      integer not null,
+    att_url      text    not null
+        constraint key_name
+            primary key
+                on conflict ignore,
+    hash         text    not null,
+    message_url  text    not null,
+    image_width  integer not null,
+    image_height integer not null
 );
 
 create table lockedchannelperms
