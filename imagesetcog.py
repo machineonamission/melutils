@@ -151,7 +151,7 @@ class ImageSetCog(commands.Cog):
         :return:
         """
         assert channel.guild == ctx.guild, "channel must be in current guild."
-        async with database.db.execute("SELECT 1 FROM imageset_channels WHERE guild=? AND channel=?",
+        async with database.db.execute("SELECT 1 FROM imageset_channels WHERE channel=? AND guild=?",
                                        (channel.id, channel.guild.id)) as cur:
             exists = await cur.fetchone() is not None
 
