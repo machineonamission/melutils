@@ -49,9 +49,10 @@ async def dup_message(message: discord.Message, new_url: str, newres: typing.Tup
     embed = discord.Embed(
         title="Your message contains a duplicate image!",
         description=f"[this attachment]({new_url}) ({newres[0]}x{newres[1]}) from [this message]({message.jump_url})"
-                    f"(sent <t:{round(message.created_at.timestamp())}:D>) "
-                    f"is a duplicate of [this attachment]({old_url}) ({oldres[0]}x{oldres[1]}) "
-                    f"from [this message]({prevmessage.jump_url}) (sent <t:{round(prevmessage.created_at.timestamp())}:D>).",
+                    f"(sent <t:{round(message.created_at.timestamp())}:D>) is a duplicate of "
+                    f"[this attachment]({old_url}) ({oldres[0]}x{oldres[1]}) "
+                    f"from [this message]({prevmessage.jump_url}) "
+                    f"(sent <t:{round(prevmessage.created_at.timestamp())}:D>).",
         color=discord.Color.from_str("#ff0000")
     )
     await message.reply(embed=embed)
