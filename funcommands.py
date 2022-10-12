@@ -26,9 +26,9 @@ def wordshuffle(words, threshold=3):
     return re.sub(r"\w+", lambda x: shuffleword(x.group(0), threshold), words)
 
 
-randomwikiurl = "https://en.wikipedia.org/w/api.php?action=query&format=json&uselang=en&prop=extracts%7Cinfo&" \
-                "generator=random&redirects=1&utf8=1&formatversion=latest&exintro=1&explaintext=1&inprop=url&" \
-                "grnnamespace=0&grnlimit=1"
+randomwikiurl = "https://en.wikipedia.org/w/api.php?action=query&format=json&uselang=en&prop=extracts%7Cinfo%7Cpageim" \
+                "ages&generator=random&redirects=1&utf8=1&formatversion=latest&exintro=1&explaintext=1&inprop=url&pip" \
+                "rop=original&grnnamespace=0&grnlimit=1"
 
 
 class FunCommands(commands.Cog, name="Fun"):
@@ -237,6 +237,8 @@ class FunCommands(commands.Cog, name="Fun"):
                 url=r["query"]["pages"][0]["fullurl"],
                 color=discord.Color.from_str("#ffffff")
             )
+            if "original" in r["query"]["pages"][0]:
+                embed.set_image(url=r["query"]["pages"][0]["original"]["source"])
             await ctx.reply("BEGIN DISCUSSION OF", embed=embed)
         else:
             await ctx.reply("Something went wrong...")
