@@ -2,6 +2,7 @@ import random
 import re
 import typing
 
+import aiohttp
 import discord
 from discord.ext import commands
 
@@ -23,6 +24,11 @@ def shuffleword(word, threshold=3):
 
 def wordshuffle(words, threshold=3):
     return re.sub(r"\w+", lambda x: shuffleword(x.group(0), threshold), words)
+
+
+randomwikiurl = "https://en.wikipedia.org/w/api.php?action=query&format=json&uselang=en&prop=extracts%7Cinfo&" \
+                "generator=random&redirects=1&utf8=1&formatversion=latest&exintro=1&explaintext=1&inprop=url&" \
+                "grnnamespace=0&grnlimit=1"
 
 
 class FunCommands(commands.Cog, name="Fun"):
@@ -215,6 +221,25 @@ class FunCommands(commands.Cog, name="Fun"):
         assert threshold >= 0
         await ctx.reply(wordshuffle(text, threshold))
 
+    @commands.command(
+        aliases=["discussion", "generatediscussion", "newdiscussion", "discuss", "d", "dn", "wiki", "randomwiki",
+                 "randomwikipedia", "wikipedia"])
+    async def discussiongenerator(self, ctx: commands.Context):
+        r: dict
+        async with aiohttp.ClientSession() as session:
+            async with session.get(randomwikiurl) as resp:
+                resp.raise_for_status()
+                r = await resp.json()
+        if r:
+            embed = discord.Embed(
+                title=r["query"]["pages"][0]["title"],
+                description=r["query"]["pages"][0]["extract"],
+                url=r["query"]["pages"][0]["fullurl"],
+                color=discord.Color.from_str("#ffffff")
+            )
+            await ctx.reply("BEGIN DISCUSSION OF", embed=embed)
+        else:
+            await ctx.reply("Something went wrong...")
 
 '''
 Steps to convert:
