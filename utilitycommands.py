@@ -616,25 +616,17 @@ class UtilityCommands(commands.Cog, name="Utility"):
 
         out = ""
         for msg in msgs:
-            votes = self.votes(msg) - 1
-            if msg.stickers:
-                sticker = msg.stickers[0]
-                name = sticker.name
-                url = sticker.url
-            else:
-                try:
-                    emoj = await commands.PartialEmojiConverter().convert(ctx, msg.content)
-                except commands.PartialEmojiConversionFailure:
-                    continue
-                name = emoj.name
-                url = emoj.url
-            out += f"""
-            <tr>
-                <td><img src="{url}" alt="{name}" height="32"></td>
-                <td>{name}</td>
-                <td>{votes}</td>
-            </tr>
-            """
+            if msg.embeds:
+                votes = self.votes(msg) - 1
+                name = msg.embeds[0].description
+                url = msg.embeds[0].image.url
+                out += f"""
+                <tr>
+                    <td><img src="{url}" alt="{name}" height="32"></td>
+                    <td>{name}</td>
+                    <td>{votes}</td>
+                </tr>
+                """
         out = template.replace("REPLACEME", out)
         with io.BytesIO() as buf:
             buf.write(bytes(out, encoding='utf8'))
