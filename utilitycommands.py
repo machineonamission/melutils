@@ -79,6 +79,12 @@ def all_emojis_from_content(content: str) -> typing.List[discord.PartialEmoji]:
     return emojos
 
 
+async def send_url(ctx: commands.Context, obj: typing.Union[discord.Emoji, discord.GuildSticker]):
+    embed = discord.Embed(description=obj.name)
+    embed.set_image(url=obj.url)
+    return await ctx.send(embed=embed)
+
+
 class UtilityCommands(commands.Cog, name="Utility"):
     """
     miscellaneous utility commands
@@ -564,20 +570,31 @@ class UtilityCommands(commands.Cog, name="Utility"):
     @commands.command(hidden=True)
     @commands.is_owner()
     async def sendallstaticemojis(self, ctx: commands.Context):
-        msgs = await asyncio.gather(*[ctx.send(str(emoji)) for emoji in ctx.guild.emojis if not emoji.animated])
-        await asyncio.gather(*[message.add_reaction("✅") for message in msgs])
+        msgs = []
+        for emoji in ctx.guild.emojis:
+            if not emoji.animated:
+                msgs.append(await send_url(ctx, emoji))
+        for message in msgs:
+            await message.add_reaction("✅")
 
     @commands.command(hidden=True)
     @commands.is_owner()
     async def sendallanimatedemojis(self, ctx: commands.Context):
-        msgs = await asyncio.gather(*[ctx.send(str(emoji)) for emoji in ctx.guild.emojis if emoji.animated])
-        await asyncio.gather(*[message.add_reaction("✅") for message in msgs])
+        msgs = []
+        for emoji in ctx.guild.emojis:
+            if emoji.animated:
+                msgs.append(await send_url(ctx, emoji))
+        for message in msgs:
+            await message.add_reaction("✅")
 
     @commands.command(hidden=True)
     @commands.is_owner()
     async def sendallstickers(self, ctx: commands.Context):
-        msgs = await asyncio.gather(*[ctx.send(stickers=[sticker]) for sticker in ctx.guild.stickers])
-        await asyncio.gather(*[message.add_reaction("✅") for message in msgs])
+        msgs = []
+        for sticker in ctx.guild.stickers:
+            msgs.append(await send_url(ctx, sticker))
+        for message in msgs:
+            await message.add_reaction("✅")
 
     @staticmethod
     def votes(msg: discord.Message):
