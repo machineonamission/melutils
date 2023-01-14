@@ -598,7 +598,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
     @commands.command(aliases=["ub"])
     @commands.bot_has_permissions(ban_members=True)
     @mod_only()
-    async def unban(self, ctx, members: Greedy[discord.User]):
+    async def unban(self, ctx: commands.Context, members: Greedy[discord.User]):
         """
         Unban one or more members
 
@@ -608,7 +608,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
         if not members:
             await ctx.reply("❌ members is a required argument that is missing.")
             return
-        bans = [ban.user for ban in await ctx.guild.bans()]
+        bans = [ban.user async for ban in ctx.guild.bans()]
         for member in members:
             if member not in bans:
                 await ctx.reply(f"❌ {member.mention} isn't banned!")
