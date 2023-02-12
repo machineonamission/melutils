@@ -85,6 +85,32 @@ async def send_url(ctx: commands.Context, obj: typing.Union[discord.Emoji, disco
     return await ctx.send(embed=embed)
 
 
+async def clone_message(msg: discord.Message, destination: discord.abc.Messageable):
+    try:
+        embed = discord.Embed()
+        icon = None
+        if msg.author.avatar:
+            icon = msg.author.avatar.url
+        embed.set_author(name=msg.author.display_name, icon_url=icon)
+        embed.timestamp = msg.created_at
+        embed.description = msg.content or "`NO CONTENT`"
+        if msg.reference:
+            if msg.reference.resolved:
+                embed.add_field(name=f"Replying to *{msg.reference.resolved.author.display_name}*",
+                                value=msg.reference.resolved.content or "`NO CONTENT`")
+        # attachments
+        filecoros = [att.to_file() for att in msg.attachments] + \
+                    [url_to_dfile(sticker.url, sticker.name) for sticker in msg.stickers] + \
+                    [url_to_dfile(em.url, em.name) for em in all_emojis_from_content(msg.content)]
+        await destination.send(embeds=[embed] + msg.embeds, files=await asyncio.gather(*filecoros))
+        return True
+    except Exception as e:
+        await destination.send(f"Failed to clone message {msg.id}\n```{e}```")
+        logger.error(f"Failed to clone message {msg.id}")
+        logger.error(e, exc_info=(type(e), e, e.__traceback__))
+        return False
+
+
 class UtilityCommands(commands.Cog, name="Utility"):
     """
     miscellaneous utility commands
@@ -145,23 +171,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
             await destination.send(f"Cloning messages from {target.mention}")
             count = 0
             async for msg in target.history(limit=None, oldest_first=True):
-
-                try:
-                    embed = discord.Embed()
-                    embed.set_author(name=msg.author.display_name, icon_url=msg.author.avatar.url)
-                    embed.timestamp = msg.created_at
-                    embed.description = msg.content
-                    if msg.reference:
-                        if msg.reference.resolved:
-                            embed.add_field(name=f"Replying to *{msg.reference.resolved.author.display_name}*",
-                                            value=msg.reference.resolved.content)
-                    await destination.send(embeds=[embed] + msg.embeds,
-                                           files=await asyncio.gather(*[att.to_file() for att in msg.attachments]))
+                if await clone_message(msg, destination):
                     count += 1
-                except Exception as e:
-                    await destination.send(f"Failed to clone message {msg.id}\n```{e}```")
-                    logger.error(f"Failed to clone message {msg.id}")
-                    logger.error(e, exc_info=(type(e), e, e.__traceback__))
             await destination.send(f"Cloned {count} message(s) from {target.mention}")
 
     class AdvancedPurgeSettings(commands.FlagConverter, case_insensitive=True):
@@ -255,25 +266,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
             # clone into target
             count = 0
             async for msg in target.history(limit=opts.limit, before=opts.before, after=opts.after, oldest_first=True):
-                try:
-                    embed = discord.Embed()
-                    embed.set_author(name=msg.author.display_name, icon_url=msg.author.avatar.url)
-                    embed.timestamp = msg.created_at
-                    embed.description = msg.content or "`NO CONTENT`"
-                    if msg.reference:
-                        if msg.reference.resolved:
-                            embed.add_field(name=f"Replying to *{msg.reference.resolved.author.display_name}*",
-                                            value=msg.reference.resolved.content or "`NO CONTENT`")
-                    # attachments
-                    filecoros = [att.to_file() for att in msg.attachments] + \
-                                [url_to_dfile(sticker.url, sticker.name) for sticker in msg.stickers] + \
-                                [url_to_dfile(em.url, em.name) for em in all_emojis_from_content(msg.content)]
-                    await destination.send(embeds=[embed] + msg.embeds, files=await asyncio.gather(*filecoros))
+                if await clone_message(msg, destination):
                     count += 1
-                except Exception as e:
-                    await destination.send(f"Failed to clone message {msg.id}\n```{e}```")
-                    logger.error(f"Failed to clone message {msg.id}")
-                    logger.error(e, exc_info=(type(e), e, e.__traceback__))
                 to_delete.append(msg)
             # delete them
             single_delete = []
@@ -652,8 +646,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
     @commands.command()
     async def id(self, ctx: commands.Context,
                  obj: typing.Union[discord.abc.GuildChannel, discord.User, discord.Guild,
-                                   discord.Thread, discord.PartialEmoji, discord.Role,
-                                   discord.Object] = None):
+                 discord.Thread, discord.PartialEmoji, discord.Role,
+                 discord.Object] = None):
         """
         gets the ID of a discord object
         :param ctx: discord context
