@@ -645,9 +645,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
 
     @commands.command()
     async def id(self, ctx: commands.Context,
-                 obj: typing.Union[discord.abc.GuildChannel, discord.User, discord.Guild,
-                 discord.Thread, discord.PartialEmoji, discord.Role,
-                 discord.Object] = None):
+                 obj: typing.Union[discord.abc.Snowflake] = None):
         """
         gets the ID of a discord object
         :param ctx: discord context
@@ -683,6 +681,61 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 f"{credit_card}, {faker.credit_card_expire()}, {faker.credit_card_security_code('visa16')}"
                 ]
         await ctx.reply("\n".join(meme))
+
+    @commands.command()
+    @commands.has_guild_permissions(manage_messages=True, manage_threads=True)
+    @commands.bot_has_guild_permissions(manage_messages=True, manage_threads=True)
+    async def purgeusermessages(self, ctx: commands.Context, user: discord.User,
+                                *exclude: discord.abc.GuildChannel):
+        """
+        purges all messages from a user in a guild
+        :param user: user to purge
+        :param exclude: channel or category to exclude from purging
+        :return:
+        """
+        excludementions = [x.mention for x in exclude]
+        await ctx.reply(f"Purging all messages from {user.mention} excluding {', '.join(excludementions)}. "
+                        f"This will take a while.")
+
+        async def purge_channel(ch: discord.abc.Messageable):
+            async for message in ch.history(limit=None):
+                if message.author == user:
+                    await message.delete()
+
+        async def unarchive_and_purge_thread(th: discord.Thread):
+            if thread in exclude:
+                logger.debug(f"skipping {thread}")
+                return
+            if thread.parent in exclude:
+                logger.debug(f"skipping {thread} due to parent {thread.parent}")
+                return
+            if thread.category in exclude:
+                logger.debug(f"skipping {thread} due to category {thread.category}")
+                return
+            locked = th.locked
+            archived = th.archived
+            if th.archived:
+                await th.edit(locked=False, archived=False)
+            await purge_channel(th)
+            await th.edit(locked=locked, archived=archived)
+
+        for channel in ctx.guild.channels:
+            if isinstance(channel, discord.abc.Messageable):
+                if channel in exclude:
+                    logger.debug(f"skipping {channel}")
+                    continue
+                if hasattr(channel, "category"):
+                    if channel.category in exclude:
+                        logger.debug(f"skipping {channel} due to category {channel.category}")
+                logger.debug(f"purging {channel} of {user}")
+                await purge_channel(channel)
+            if hasattr(channel, "threads"):
+                for thread in channel.threads:
+                    await unarchive_and_purge_thread(thread)
+            if hasattr(channel, "archived_threads"):
+                async for thread in channel.archived_threads(limit=None):
+                    await unarchive_and_purge_thread(thread)
+        await ctx.reply(f"Finished purging {user.mention}!")
 
 
 '''
