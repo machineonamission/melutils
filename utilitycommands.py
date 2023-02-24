@@ -739,6 +739,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 if hasattr(channel, "category"):
                     if channel.category in exclude:
                         logger.debug(f"skipping {channel} due to category {channel.category}")
+                        continue
                 await purge_channel(channel)
             if hasattr(channel, "threads"):
                 for thread in channel.threads:
