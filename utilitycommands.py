@@ -704,7 +704,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
                     try:
                         await message.delete()
                     except Exception as e:
-                        await ctx.reply(f"deletion of {message} in {message.channel} failed due to {e}")
+                        await ctx.reply(f"deletion of {message} in {message.channel} failed due to {e}",
+                                        mention_author=False)
 
         async def unarchive_and_purge_thread(th: discord.Thread):
             if thread in exclude:
