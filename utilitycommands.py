@@ -697,15 +697,16 @@ class UtilityCommands(commands.Cog, name="Utility"):
         await ctx.reply(f"Purging all messages from {user.mention} excluding {', '.join(excludementions)}. "
                         f"This will take a while.")
 
-        async def purge_channel(ch: discord.abc.Messageable):
+        def purge_check(m: discord.Message):
+            return m.author == user
+
+        async def purge_channel(ch: typing.Union[discord.Thread, discord.TextChannel, discord.VoiceChannel]):
             logger.debug(f"purging {channel} of {user}")
-            async for message in ch.history(limit=None):
-                if message.author == user:
-                    try:
-                        await message.delete()
-                    except Exception as e:
-                        await ctx.reply(f"deletion of {message} in {message.channel} failed due to {e}",
-                                        mention_author=False)
+            try:
+                await ch.purge(limit=None, check=purge_check)
+            except Exception as e:
+                await ctx.reply(f"deletion in {ch} failed due to {e}",
+                                mention_author=False)
 
         async def unarchive_and_purge_thread(th: discord.Thread):
             if thread in exclude:
