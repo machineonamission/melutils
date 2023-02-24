@@ -698,10 +698,12 @@ class UtilityCommands(commands.Cog, name="Utility"):
                         f"This will take a while.")
 
         def purge_check(m: discord.Message):
+            m.is_system()
             return m.author == user and m.type in [
                 discord.MessageType.default,
                 discord.MessageType.reply,
-                discord.MessageType.application_command
+                discord.MessageType.chat_input_command,
+                discord.MessageType.context_menu_command
             ]
 
         async def purge_channel(ch: typing.Union[discord.Thread, discord.TextChannel, discord.VoiceChannel]):
