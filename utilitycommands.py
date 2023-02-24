@@ -705,11 +705,11 @@ class UtilityCommands(commands.Cog, name="Utility"):
             ]
 
         async def purge_channel(ch: typing.Union[discord.Thread, discord.TextChannel, discord.VoiceChannel]):
-            logger.debug(f"purging {channel} of {user}")
+            logger.debug(f"purging {ch} of {user}")
             try:
                 await ch.purge(limit=None, check=purge_check, bulk=True)
             except Exception as e:
-                await ctx.reply(f"deletion in {ch} failed due to {e}",
+                await ctx.reply(f"deletion in {ch.mention} failed due to {e}",
                                 mention_author=False)
 
         async def unarchive_and_purge_thread(th: discord.Thread):
