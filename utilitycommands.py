@@ -698,12 +698,16 @@ class UtilityCommands(commands.Cog, name="Utility"):
                         f"This will take a while.")
 
         def purge_check(m: discord.Message):
-            return m.author == user
+            return m.author == user and m.type in [
+                discord.MessageType.default,
+                discord.MessageType.reply,
+                discord.MessageType.application_command
+            ]
 
         async def purge_channel(ch: typing.Union[discord.Thread, discord.TextChannel, discord.VoiceChannel]):
             logger.debug(f"purging {channel} of {user}")
             try:
-                await ch.purge(limit=None, check=purge_check)
+                await ch.purge(limit=None, check=purge_check, bulk=True)
             except Exception as e:
                 await ctx.reply(f"deletion in {ch} failed due to {e}",
                                 mention_author=False)
