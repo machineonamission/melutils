@@ -701,7 +701,10 @@ class UtilityCommands(commands.Cog, name="Utility"):
             logger.debug(f"purging {channel} of {user}")
             async for message in ch.history(limit=None):
                 if message.author == user:
-                    await message.delete()
+                    try:
+                        await message.delete()
+                    except Exception as e:
+                        await ctx.reply(f"deletion of {message} in {message.channel} failed due to {e}")
 
         async def unarchive_and_purge_thread(th: discord.Thread):
             if thread in exclude:
