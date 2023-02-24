@@ -698,6 +698,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
                         f"This will take a while.")
 
         async def purge_channel(ch: discord.abc.Messageable):
+            logger.debug(f"purging {channel} of {user}")
             async for message in ch.history(limit=None):
                 if message.author == user:
                     await message.delete()
@@ -727,7 +728,6 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 if hasattr(channel, "category"):
                     if channel.category in exclude:
                         logger.debug(f"skipping {channel} due to category {channel.category}")
-                logger.debug(f"purging {channel} of {user}")
                 await purge_channel(channel)
             if hasattr(channel, "threads"):
                 for thread in channel.threads:
