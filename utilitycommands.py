@@ -308,7 +308,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
     # @commands.cooldown(1, 60 * 60, BucketType.channel)
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def mediazip(self, ctx, channel: discord.TextChannel = None):
+    async def mediazip(self, ctx: commands.Context, channel: discord.TextChannel = None):
         """
         zip all media in channel
         :param ctx: discord context
@@ -340,14 +340,14 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 size = archive.tell()
                 archive.seek(0)
                 if size < 8388119:
-                    await ctx.reply(file=discord.File(fp=archive, filename="media.zip"))
+                    await ctx.reply(file=discord.File(fp=archive, filename=f"{ctx.channel.name}.zip"))
                 else:
                     hsize = humanize.filesize.naturalsize(size)
                     if not os.path.isdir("files"):
                         os.mkdir("files")
                     with open(temp_file_name("zip", "files/"), "wb+") as f:
                         f.write(archive.read())
-                    await ctx.reply(f"File is {hsize}. Wrote to `files/media.zip`.")
+                    await ctx.reply(f"File is {hsize}. Wrote to `files/{ctx.channel.name}.zip`.")
 
     @commands.command(aliases=["remind", "remindme", "messagemein"])
     async def reminder(self, ctx, when: time_converter, *, reminder):
