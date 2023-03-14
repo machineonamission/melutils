@@ -341,24 +341,18 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 filebytes = await asyncio.gather(*files)
             else:
                 filebytes = [await dl for dl in files]
-            with io.BytesIO() as archive:
+            with open(f"files/{ctx.channel.name}.zip", "wb+") as archive:
                 with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
                     for i, f in enumerate(filebytes):
                         if f:
-                            zip_archive.writestr(f"{i}.{exts[i]}",
-                                                 bytes(f))
+                            zip_archive.writestr(f"{i}.{exts[i]}", bytes(f))
                 archive.seek(0, 2)
                 size = archive.tell()
                 archive.seek(0)
-                if size < 8388119:
-                    await ctx.reply(file=discord.File(fp=archive, filename=f"{ctx.channel.name}.zip"))
-                else:
-                    hsize = humanize.filesize.naturalsize(size)
-                    if not os.path.isdir("files"):
-                        os.mkdir("files")
-                    with open(f"files/{ctx.channel.name}.zip", "wb+") as f:
-                        f.write(archive.read())
-                    await ctx.reply(f"File is {hsize}. Wrote to `files/{ctx.channel.name}.zip`.")
+                hsize = humanize.filesize.naturalsize(size)
+                if not os.path.isdir("files"):
+                    os.mkdir("files")
+                await ctx.reply(f"File is {hsize}. Wrote to `files/{ctx.channel.name}.zip`.")
 
     @commands.command(aliases=["remind", "remindme", "messagemein"])
     async def reminder(self, ctx, when: time_converter, *, reminder):
