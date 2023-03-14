@@ -36,12 +36,17 @@ async def fetch_all(session, urls):
     return results
 
 
-async def ignore_error(coro):
-    try:
-        return await coro
-    except Exception as e:
-        print(e)
-        return None
+async def retry_coro(func: typing.Callable[[], typing.Coroutine], retry_n: int = 5):
+    for _ in range(retry_n):
+        try:
+            logger.debug(f"trying coro {func}")
+            res = await func()
+            logger.debug(f"coro {func} finished!")
+            return res
+        except Exception as e:
+            logger.warning(f"coro {func} failed with exception {e}")
+    logger.error(f"coro {func} failed {retry_n} times, returning None.")
+    return None
 
 
 async def saveurl(url) -> bytes:
@@ -308,14 +313,14 @@ class UtilityCommands(commands.Cog, name="Utility"):
     # @commands.cooldown(1, 60 * 60, BucketType.channel)
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def mediazip(self, ctx: commands.Context, channel: discord.TextChannel = None):
+    async def mediazip(self, ctx: commands.Context, parallel: bool = True):
         """
         zip all media in channel
+        :param parallel: download media all at once or one-by-one?
         :param ctx: discord context
-        :param channel: the text channel to zip the media. if unspecified, uses this channel.
         :return: the amount of media
         """
-        channel = channel or ctx.channel
+        channel = ctx.channel
         files = []
         exts = []
         async with ctx.channel.typing():
@@ -323,13 +328,19 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 if len(msg.embeds):
                     for embed in msg.embeds:
                         if embed.type in ["image", "video", "audio", "gifv"]:
-                            files.append(ignore_error(saveurl(embed.url)))
+                            async def save():
+                                return await saveurl(embed.url)
+
+                            files.append(retry_coro(save))
                             exts.append(embed.url.split(".")[-1])
                 if len(msg.attachments):
                     for att in msg.attachments:
-                        files.append(ignore_error(att.read()))
+                        files.append(retry_coro(att.read))
                         exts.append(att.url.split(".")[-1])
-            filebytes = await asyncio.gather(*files)
+            if parallel:
+                filebytes = await asyncio.gather(*files)
+            else:
+                filebytes = [await dl for dl in files]
             with io.BytesIO() as archive:
                 with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
                     for i, f in enumerate(filebytes):
@@ -345,7 +356,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
                     hsize = humanize.filesize.naturalsize(size)
                     if not os.path.isdir("files"):
                         os.mkdir("files")
-                    with open(temp_file_name("zip", "files/"), "wb+") as f:
+                    with open(f"files/{ctx.channel.name}.zip", "wb+") as f:
                         f.write(archive.read())
                     await ctx.reply(f"File is {hsize}. Wrote to `files/{ctx.channel.name}.zip`.")
 
