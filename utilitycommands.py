@@ -341,6 +341,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 filebytes = await asyncio.gather(*files)
             else:
                 filebytes = [await dl for dl in files]
+            if not os.path.isdir("files"):
+                os.mkdir("files")
             with open(f"files/{ctx.channel.name}.zip", "wb+") as archive:
                 with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
                     for i, f in enumerate(filebytes):
@@ -350,8 +352,6 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 size = archive.tell()
                 archive.seek(0)
                 hsize = humanize.filesize.naturalsize(size)
-                if not os.path.isdir("files"):
-                    os.mkdir("files")
                 await ctx.reply(f"File is {hsize}. Wrote to `files/{ctx.channel.name}.zip`.")
 
     @commands.command(aliases=["remind", "remindme", "messagemein"])
