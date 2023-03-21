@@ -5,12 +5,8 @@ import discord
 from discord.ext import commands
 
 import database
-from moderation import mod_only
+from moderation import mod_only, quote
 from modlog import modlog
-
-
-def alphanumeric(argument: str):
-    return ''.join(i for i in argument if i.isalnum())
 
 
 class MacroCog(commands.Cog, name="Macros"):
@@ -23,7 +19,7 @@ class MacroCog(commands.Cog, name="Macros"):
 
     @mod_only()
     @commands.command(aliases=["createmacro", "newmacro", "setmacro", "am"])
-    async def addmacro(self, ctx: commands.Context, name: alphanumeric, *, content):
+    async def addmacro(self, ctx: commands.Context, name, *, content):
         """
         creates a macro
 
@@ -41,7 +37,8 @@ class MacroCog(commands.Cog, name="Macros"):
             (ctx.guild.id, name, content))
         await database.db.commit()
         await ctx.reply(f"✔️ Added macro `{name}`.")
-        await modlog(f"{ctx.author.mention} (`{ctx.author}`) added macro `{name}`.", ctx.guild.id, modid=ctx.author.id)
+        await modlog(f"{ctx.author.mention} (`{ctx.author}`) added macro `{name}` with content:\n{quote(content)}",
+                     ctx.guild.id, modid=ctx.author.id)
 
     @mod_only()
     @commands.command(aliases=["deletemacro"])
