@@ -988,7 +988,6 @@ class ModerationCog(commands.Cog, name="Moderation"):
             await ctx.reply(f"❌ Server has no rule for {point_count} point{'' if point_count == 1 else 's'}!")
 
     @commands.command(aliases=["listautopunishments", "listap", "aps"])
-    @mod_only()
     async def autopunishments(self, ctx):
         """
         Lists the auto-punishments for the server.
