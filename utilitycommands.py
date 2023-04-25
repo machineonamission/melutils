@@ -181,7 +181,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
             await destination.send(f"Cloned {count} message(s) from {target.mention}")
 
     class AdvancedPurgeSettings(commands.FlagConverter, case_insensitive=True):
-        limit: typing.Optional[int] = 100
+        limit: typing.Optional[int] = None
         before: typing.Optional[typing.Union[discord.Object, datetime]] = None
         after: typing.Optional[typing.Union[discord.Object, datetime]] = None
         around: typing.Optional[typing.Union[discord.Object, datetime]] = None
@@ -285,8 +285,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 else:
                     bulk_delete.append(msg)
             # await the deletes all at once frfr
-            await asyncio.wait([msg.delete() for msg in single_delete] +
-                               [target.delete_messages(msgs) for msgs in slice_per(bulk_delete, 100)])
+            await asyncio.gather(*([msg.delete() for msg in single_delete] +
+                                   [target.delete_messages(msgs) for msgs in slice_per(bulk_delete, 100)]))
             await ctx.reply(f"Cloned {count} message{'' if count == 1 else 's'} into {destination.mention}")
 
     @commands.cooldown(1, 60 * 60, BucketType.channel)

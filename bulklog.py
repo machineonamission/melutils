@@ -70,7 +70,7 @@ class BulkLog(commands.Cog):
             "Channel": f"{msgs[0].channel.mention} (#{msgs[0].channel})",
             "Number of Messages Deleted": str(len(msgs))
         }, msgs[0].guild.id, color=discord.Colour.red())
-        await asyncio.wait([self.on_message_delete(msg) for msg in msgs])
+        await asyncio.gather(*[self.on_message_delete(msg) for msg in msgs])
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
