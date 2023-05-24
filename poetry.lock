@@ -123,15 +123,19 @@ speedups = ["Brotli", "aiodns", "cchardet"]
 
 [[package]]
 name = "aioscheduler"
-version = "1.4.2"
+version = "1.5.0"
 description = "Scalable, high-performance AsyncIO task scheduler"
 category = "main"
 optional = false
 python-versions = ">=3.7"
-files = [
-    { file = "aioscheduler-1.4.2-py3-none-any.whl", hash = "sha256:8aaeb7bc01df82136fca38e77f4fc75a503c1d78d23917e15ee8c540e3e4bc23" },
-    { file = "aioscheduler-1.4.2.tar.gz", hash = "sha256:9fb189c77252baf469f1b2f74dc8321f8516bc3a0428b4160314c0df22ebee06" },
-]
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/HexCodeFFF/aioscheduler.git"
+reference = "tz_aware"
+resolved_reference = "467bc4eb40cf8f94955ee6d2a2418fad4b16954d"
 
 [[package]]
 name = "aiosignal"
@@ -1011,4 +1015,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "d2fb5118f8d88e3384e43963d1b49c1b02fc13f53f9db74ff77a0d32feac6f07"
+content-hash = "2623e21a0fb81868113c3010ac9f2edcfcfa8e518668d31edbf1868d16ec45ff"

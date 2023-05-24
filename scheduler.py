@@ -11,7 +11,7 @@ import database
 import modlog
 from clogs import logger
 
-scheduler = TimedScheduler(prefer_utc=True)
+scheduler = TimedScheduler(timezone_aware=True)
 botcopy: commands.Bot
 loadedtasks = dict()  # keep track of task objects to cancel if needed.
 
@@ -36,7 +36,7 @@ async def start():
                 await run_event(event[0], event[2], data)
             else:
                 logger.debug(f"scheduling stored event #{event[0]}")
-                task = scheduler.schedule(run_event(event[0], event[2], data), dt.replace(tzinfo=None))
+                task = scheduler.schedule(run_event(event[0], event[2], data), dt)
                 loadedtasks[event[0]] = task
 
 
@@ -153,8 +153,7 @@ async def schedule(time: datetime, eventtype: str, eventdata: dict):
     async with database.db.execute("INSERT INTO schedule (eventtime, eventtype, eventdata) VALUES (?,?,?)",
                                    (time.timestamp(), eventtype, json.dumps(eventdata))) as cursor:
         lri = cursor.lastrowid
-        timef = time.astimezone(tz=timezone.utc).replace(tzinfo=None)
-        task = scheduler.schedule(run_event(lri, eventtype, eventdata), timef)
+        task = scheduler.schedule(run_event(lri, eventtype, eventdata), time)
         loadedtasks[lri] = task
         logger.debug(f"scheduled event #{lri} for {time}")
         # logger.debug(loadedtasks)
