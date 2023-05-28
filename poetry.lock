@@ -135,7 +135,7 @@ develop = false
 type = "git"
 url = "https://github.com/HexCodeFFF/aioscheduler.git"
 reference = "tz_aware"
-resolved_reference = "467bc4eb40cf8f94955ee6d2a2418fad4b16954d"
+resolved_reference = "ee06f2689db223416c9d200c6c58e9bdda97fb83"
 
 [[package]]
 name = "aiosignal"
