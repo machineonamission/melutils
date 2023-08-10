@@ -46,6 +46,10 @@ async def dup_react(message: discord.Message, new_url: str, newres: typing.Tuple
 
 async def dup_message(message: discord.Message, new_url: str, newres: typing.Tuple[int, int],
                       prevmessage: discord.Message, old_url: str, oldres: typing.Tuple[int, int]):
+    view = discord.ui.View()
+    view.add_item(DelButton(prevmessage, True))
+    view.add_item(DelButton(message, False))
+    view.add_item(DismissButton())
     embed = discord.Embed(
         title="Your message contains a duplicate image!",
         description=f"[this attachment]({new_url}) ({newres[0]}x{newres[1]}) from [this message]({message.jump_url}) "
@@ -53,9 +57,9 @@ async def dup_message(message: discord.Message, new_url: str, newres: typing.Tup
                     f"[this attachment]({old_url}) ({oldres[0]}x{oldres[1]}) "
                     f"from [this message]({prevmessage.jump_url}) "
                     f"(sent <t:{round(prevmessage.created_at.timestamp())}:D>).",
-        color=discord.Color.from_str("#ff0000")
+        color=discord.Color.from_str("#ff0000"),
     )
-    await message.reply(embed=embed)
+    await message.reply(embed=embed, view=view)
 
 
 dup_funcs = {
@@ -120,7 +124,36 @@ async def hashchannel(channel: typing.Union[discord.TextChannel, discord.Thread]
         await hashmessage(message, False)
 
 
+async def callback(*args, **kwargs):
+    logger.debug(args)
+    logger.debug(kwargs)
+
+
+class DelButton(discord.ui.Button):
+    def __init__(self, messageref: discord.Message, older: bool = True):
+        self.messageref = messageref
+        super().__init__(label=f"Delete {'Older' if older else 'Newer'} Message", emoji="🗑️",
+                         style=discord.ButtonStyle.danger)
+
+    async def callback(self, interaction: discord.Interaction):
+        await self.messageref.delete()
+        await interaction.message.delete()
+
+
+class DismissButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label=f"Dismiss", emoji="❌",
+                         style=discord.ButtonStyle.secondary)
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.message.delete()
+
+
 class ImageSetCog(commands.Cog):
+    """
+    Automatically detect and remove duplicate images in a channel
+    """
+
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 

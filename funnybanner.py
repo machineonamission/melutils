@@ -134,10 +134,6 @@ async def resize_url(url: str) -> typing.Optional[typing.Tuple[bytes, typing.Lit
 
 
 class FunnyBanner(commands.Cog, name="Funny Banner"):
-    """
-    send an image from @Amazingpapers or set it as a banner
-    """
-
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 

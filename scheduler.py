@@ -32,7 +32,7 @@ async def start():
             dt = datetime.fromtimestamp(event[1], tz=timezone.utc)
             if dt <= datetime.now(tz=timezone.utc):
                 logger.debug(f"running missed event #{event[0]}")
-                loadedtasks[event[0]] = task  # not needed but easier to put this here than to ignore the exception
+                # loadedtasks[event[0]] = task  # not needed but easier to put this here than to ignore the exception
                 await run_event(event[0], event[2], data)
             else:
                 logger.debug(f"scheduling stored event #{event[0]}")

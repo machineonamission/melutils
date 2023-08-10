@@ -7,7 +7,7 @@ license = "GPL-3"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-"discord.py" = "^2.2.3"
+"discord.py" = "^2.3.2"
 humanize = { git = "https://github.com/HexCodeFFF/humanize.git" }
 si-prefix = { git = "https://github.com/HexCodeFFF/si-prefix.git" }
 coloredlogs = "^15.0.1"
@@ -15,9 +15,9 @@ aiosqlite = "^0.19.0"
 aioscheduler = { git = "https://github.com/HexCodeFFF/aioscheduler.git", branch = "tz_aware" }
 docstring-parser = "^0.15"
 emojis = "^0.7.0"
-aiofiles = "^23.1.0"
+aiofiles = "^23.2.1"
 Pillow = "^9.0.0"
-tqdm = "^4.65.0"
+tqdm = "^4.66.1"
 Faker = "^12.0.0"
 openpyxl = "^3.1.2"
 ImageHash = "^4.2.1"
