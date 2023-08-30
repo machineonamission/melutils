@@ -233,8 +233,8 @@ class FunnyBanner(commands.Cog, name="Funny Banner"):
             msgs.sort(key=self.msgscore, reverse=False)
             for msg in msgs:
                 msgscore = self.msgscore(msg)[0]
-                if msgscore <= 0:
-                    continue
+                # if msgscore <= 0:
+                #     continue
                 # go through every attachment and embed, try to resize it to 16:9
                 # if this succeeds its a valid image (errors are caught and return None), return from the loop
                 if msg.attachments:
