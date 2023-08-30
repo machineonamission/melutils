@@ -214,68 +214,68 @@ class FunnyBanner(commands.Cog, name="Funny Banner"):
             else:
                 await ctx.reply(f"No banner found!")
 
-        @commands.command()
-        @commands.is_owner()
-        async def bottombanner(self, ctx: commands.Context, preview: bool = True):
-            async with ctx.typing():
-                server = self.bot.get_guild(829973626442088468)
-                assert ctx.guild == server
-                channel = server.get_channel(908859472288551015)
-                # upvote = discord.utils.get(server.emojis, id=830090068961656852)
-                # downvote = discord.utils.get(server.emojis, id=830090093788004352)
-                resizedimage = None
-                bannermessage = None
-                # go through every message in the channel in decreasing order of calculated score
-                msgs = [message async for message in channel.history(limit=None)]
-                if not msgs:
-                    await ctx.reply("No messages in configured channel!")
-                    return
-                msgs.sort(key=self.msgscore, reverse=False)
-                for msg in msgs:
-                    msgscore = self.msgscore(msg)[0]
-                    if msgscore <= 0:
-                        continue
-                    # go through every attachment and embed, try to resize it to 16:9
-                    # if this succeeds its a valid image (errors are caught and return None), return from the loop
-                    if msg.attachments:
-                        for att in msg.attachments:
-                            resizedimage = await resize_url(att.url)
+    @commands.command()
+    @commands.is_owner()
+    async def bottombanner(self, ctx: commands.Context, preview: bool = True):
+        async with ctx.typing():
+            server = self.bot.get_guild(829973626442088468)
+            assert ctx.guild == server
+            channel = server.get_channel(908859472288551015)
+            # upvote = discord.utils.get(server.emojis, id=830090068961656852)
+            # downvote = discord.utils.get(server.emojis, id=830090093788004352)
+            resizedimage = None
+            bannermessage = None
+            # go through every message in the channel in decreasing order of calculated score
+            msgs = [message async for message in channel.history(limit=None)]
+            if not msgs:
+                await ctx.reply("No messages in configured channel!")
+                return
+            msgs.sort(key=self.msgscore, reverse=False)
+            for msg in msgs:
+                msgscore = self.msgscore(msg)[0]
+                if msgscore <= 0:
+                    continue
+                # go through every attachment and embed, try to resize it to 16:9
+                # if this succeeds its a valid image (errors are caught and return None), return from the loop
+                if msg.attachments:
+                    for att in msg.attachments:
+                        resizedimage = await resize_url(att.url)
+                        if resizedimage is not None:
+                            break
+                elif msg.embeds:
+                    for embed in msg.embeds:
+                        if embed.image:
+                            resizedimage = await resize_url(embed.image.url)
                             if resizedimage is not None:
                                 break
-                    elif msg.embeds:
-                        for embed in msg.embeds:
-                            if embed.image:
-                                resizedimage = await resize_url(embed.image.url)
+                        elif embed.url and embed.type in ["image", "gifv"]:
+                            if embed.video:
+                                resizedimage = await resize_url(embed.video.url)
                                 if resizedimage is not None:
                                     break
-                            elif embed.url and embed.type in ["image", "gifv"]:
-                                if embed.video:
-                                    resizedimage = await resize_url(embed.video.url)
-                                    if resizedimage is not None:
-                                        break
-                                resizedimage = await resize_url(embed.url)
-                                if resizedimage is not None:
-                                    break
-                    if resizedimage is not None:
-                        bannermessage = msg
-                        break
-                if resizedimage is not None:  # we found a suitable banner
-                    resizedimage, ext = resizedimage
-                    if preview:
-                        await ctx.reply(
-                            f"{bannermessage.author.mention}'s banner will be chosen with a score of **{msgscore}**!",
-                            file=discord.File(io.BytesIO(resizedimage), filename=f"banner.{ext}"),
-                        )
-                    else:
-                        await server.edit(banner=resizedimage)
-                        await ctx.reply(
-                            f"{bannermessage.author.mention}'s banner was chosen with a score of **{msgscore}**!",
-                            file=discord.File(io.BytesIO(resizedimage), filename=f"banner.{ext}"),
-                            allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=False,
-                                                                     replied_user=True))
-                        await bannermessage.delete()
+                            resizedimage = await resize_url(embed.url)
+                            if resizedimage is not None:
+                                break
+                if resizedimage is not None:
+                    bannermessage = msg
+                    break
+            if resizedimage is not None:  # we found a suitable banner
+                resizedimage, ext = resizedimage
+                if preview:
+                    await ctx.reply(
+                        f"{bannermessage.author.mention}'s banner will be chosen with a score of **{msgscore}**!",
+                        file=discord.File(io.BytesIO(resizedimage), filename=f"banner.{ext}"),
+                    )
                 else:
-                    await ctx.reply(f"No banner found!")
+                    await server.edit(banner=resizedimage)
+                    await ctx.reply(
+                        f"{bannermessage.author.mention}'s banner was chosen with a score of **{msgscore}**!",
+                        file=discord.File(io.BytesIO(resizedimage), filename=f"banner.{ext}"),
+                        allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=False,
+                                                                 replied_user=True))
+                    await bannermessage.delete()
+            else:
+                await ctx.reply(f"No banner found!")
 
     @commands.command()
     @commands.is_owner()
