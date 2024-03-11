@@ -39,12 +39,12 @@ class GateKeep(commands.Cog):
                         th = await memberguild.fetch_channel(int(res[0]))
                     except discord.NotFound:
                         logger.info(f"thread {res[0]} not found, skipping delete")
-                        return
-                try:
-                    await th.delete()
-                except discord.HTTPException:
-                    await th.send(f"User left, locking thread.")
-                    await th.edit(archived=True, locked=True)
+                if th:
+                    try:
+                        await th.delete()
+                    except discord.HTTPException:
+                        await th.send(f"User left, locking thread.")
+                        await th.edit(archived=True, locked=True)
         await database.db.execute("DELETE FROM members_to_verify WHERE guild=? AND member=?",
                                   (memberguild.id, memberid))
         await database.db.commit()
