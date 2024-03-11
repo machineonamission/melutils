@@ -253,46 +253,48 @@ class GateKeep(commands.Cog):
         """
         Rescans all members of the guild to make sure everyone who needs it has a verification thread.
         """
-        async with database.db.execute(
-                "SELECT member,thread from members_to_verify WHERE guild=?",
-                (ctx.guild.id,)) as cur:
-            cur: aiosqlite.Cursor
-            saved_members = await cur.fetchall()
-        async with database.db.execute("SELECT verified_role FROM server_config WHERE guild=?",
-                                       (ctx.guild.id,)) as cur:
-            res2 = await cur.fetchone()
-        verified_role = ctx.guild.get_role(res2[0])
-        members = list(ctx.guild.members)
-        for member in members:
-            for vmember, vthread in saved_members:
-                if member.id == vmember:
-                    try:
-                        thread: discord.Thread = await ctx.guild.fetch_channel(vthread)
-                        if verified_role not in member.roles:
-                            # unarchive thread cause why not
-                            if thread.archived:
-                                await thread.edit(archived=False)
-                        else:
-                            await database.db.execute("DELETE FROM members_to_verify WHERE guild=? AND member=?",
-                                                      (ctx.guild.id, member.id))
-                            await database.db.commit()
-                    except discord.DiscordException:
-                        if verified_role not in member.roles and not member.bot:
-                            # member in db, but thread is gone. run first-time setup
-                            await self.on_member_join(member)
-                    break
-            else:
-                if verified_role not in member.roles and not member.bot:
-                    # member not in db, run first-time setup
-                    await self.on_member_join(member)
-
-        for vmember, _ in saved_members:
+        async with ctx.typing():
+            async with database.db.execute(
+                    "SELECT member,thread from members_to_verify WHERE guild=?",
+                    (ctx.guild.id,)) as cur:
+                cur: aiosqlite.Cursor
+                saved_members = await cur.fetchall()
+            async with database.db.execute("SELECT verified_role FROM server_config WHERE guild=?",
+                                           (ctx.guild.id,)) as cur:
+                res2 = await cur.fetchone()
+            verified_role = ctx.guild.get_role(res2[0])
+            members = list(ctx.guild.members)
             for member in members:
-                if member.id == vmember:
-                    break
-            else:
-                # if member no longer in guild, remove them
-                await self.omr(vmember, ctx.guild)
+                for vmember, vthread in saved_members:
+                    if member.id == vmember:
+                        try:
+                            thread: discord.Thread = await ctx.guild.fetch_channel(vthread)
+                            if verified_role not in member.roles:
+                                # unarchive thread cause why not
+                                if thread.archived:
+                                    await thread.edit(archived=False)
+                            else:
+                                await database.db.execute("DELETE FROM members_to_verify WHERE guild=? AND member=?",
+                                                          (ctx.guild.id, member.id))
+                                await database.db.commit()
+                        except discord.DiscordException:
+                            if verified_role not in member.roles and not member.bot:
+                                # member in db, but thread is gone. run first-time setup
+                                await self.on_member_join(member)
+                        break
+                else:
+                    if verified_role not in member.roles and not member.bot:
+                        # member not in db, run first-time setup
+                        await self.on_member_join(member)
+
+            for vmember, _ in saved_members:
+                for member in members:
+                    if member.id == vmember:
+                        break
+                else:
+                    # if member no longer in guild, remove them
+                    await self.omr(vmember, ctx.guild)
+        await ctx.send("Done!")
 
 
 '''

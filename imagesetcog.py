@@ -1,3 +1,4 @@
+import asyncio
 import io
 import typing
 
@@ -212,6 +213,20 @@ class ImageSetCog(commands.Cog):
             await ctx.reply("✔️ Channel is no longer an Image Set.")
         else:
             await ctx.reply("⚠️ Channel is not an Image Set.")
+
+    @moderation.mod_only()
+    @commands.command()
+    async def rescanimagesets(self, ctx: commands.Context):
+        channels = []
+        async with database.db.execute("SELECT channel FROM imageset_channels WHERE guild=?",
+                                       (ctx.guild.id,)) as cur:
+            async for (channel,) in cur:
+                try:
+                    channels.append(await ctx.guild.fetch_channel(channel))
+                except discord.NotFound:
+                    logger.debug(f"oopsie woopsie :3 (channel {channel} does not exist)")
+        print(channels)
+        # await asyncio.gather(*[hashchannel(channel) for channel in channels])
 
 
 # command here
