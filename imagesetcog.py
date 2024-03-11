@@ -113,8 +113,8 @@ async def hashmessage(message: discord.Message, react=True):
                         await database.db.execute(
                             "INSERT INTO imageset_hashes(guild, channel, message, message_url, att_url, hash,"
                             " image_width, image_height) VALUES (?,?,?,?,?,?,?,?)",
-                            (message.guild.id, message.channel.id, message.id, message.jump_url, att.url, str(imhash),
-                             imres[0], imres[1]))
+                            (message.guild.id, message.channel.id, message.id, message.jump_url, att.url.split("?")[0],
+                             str(imhash), imres[0], imres[1]))
                         await database.db.commit()
         if react:
             await message.remove_reaction("⚙", message.guild.me)
