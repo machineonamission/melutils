@@ -80,7 +80,7 @@ async def hashmessage(message: discord.Message, react=True):
             (hashsize, hashdiff, duplicate_behavior) = await cur.fetchone()
         for att in message.attachments:
             async with database.db.execute("SELECT 1 FROM imageset_hashes WHERE att_url=?",
-                                           (att.url,)) as cur:
+                                           (att.url.split("?")[0],)) as cur:
                 exists = await cur.fetchone() is not None
             if not exists:
                 hashresult = await hashandresurl(att.url, hashsize)
