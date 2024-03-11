@@ -230,6 +230,9 @@ class GateKeep(commands.Cog):
                 await ctx.channel.edit(archived=True, locked=True)
                 await modlog.modlog(f"{ctx.author.mention} (@{ctx.author}) verified {member.mention} (@{member})",
                                     ctx.guild.id, member.id, ctx.author.id)
+                await database.db.execute("DELETE FROM members_to_verify WHERE guild=? AND member=?",
+                                          (ctx.guild.id, member.id))
+                await database.db.commit()
             else:
                 await ctx.reply("❌ Server has no verified role. Run `m.initverification` to create one.")
         else:
@@ -265,12 +268,18 @@ class GateKeep(commands.Cog):
                 if member.id == vmember:
                     try:
                         thread: discord.Thread = await ctx.guild.fetch_channel(vthread)
-                        # unarchive thread cause why not
-                        if thread.archived:
-                            await thread.edit(archived=False)
+                        if verified_role not in member.roles:
+                            # unarchive thread cause why not
+                            if thread.archived:
+                                await thread.edit(archived=False)
+                        else:
+                            await database.db.execute("DELETE FROM members_to_verify WHERE guild=? AND member=?",
+                                                      (ctx.guild.id, member.id))
+                            await database.db.commit()
                     except discord.DiscordException:
-                        # member in db, but thread is gone. run first-time setup
-                        await self.on_member_join(member)
+                        if verified_role not in member.roles and not member.bot:
+                            # member in db, but thread is gone. run first-time setup
+                            await self.on_member_join(member)
                     break
             else:
                 if verified_role not in member.roles and not member.bot:
