@@ -11,7 +11,7 @@ python = "^3.11"
 humanize = { git = "https://github.com/HexCodeFFF/humanize.git" }
 si-prefix = { git = "https://github.com/HexCodeFFF/si-prefix.git" }
 coloredlogs = "^15.0.1"
-aiosqlite = "^0.19.0"
+aiosqlite = "^0.20.0"
 aioscheduler = { git = "https://github.com/HexCodeFFF/aioscheduler.git", branch = "tz_aware" }
 docstring-parser = "^0.15"
 emojis = "^0.7.0"
