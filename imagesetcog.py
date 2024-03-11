@@ -217,16 +217,17 @@ class ImageSetCog(commands.Cog):
     @moderation.mod_only()
     @commands.command()
     async def rescanimagesets(self, ctx: commands.Context):
-        channels = []
-        async with database.db.execute("SELECT channel FROM imageset_channels WHERE guild=?",
-                                       (ctx.guild.id,)) as cur:
-            async for (channel,) in cur:
-                try:
-                    channels.append(await ctx.guild.fetch_channel(channel))
-                except discord.NotFound:
-                    logger.debug(f"oopsie woopsie :3 (channel {channel} does not exist)")
-        print(channels)
-        # await asyncio.gather(*[hashchannel(channel) for channel in channels])
+        async with ctx.typing():
+            channels = []
+            async with database.db.execute("SELECT channel FROM imageset_channels WHERE guild=?",
+                                           (ctx.guild.id,)) as cur:
+                async for (channel,) in cur:
+                    try:
+                        channels.append(await ctx.guild.fetch_channel(channel))
+                    except discord.NotFound:
+                        logger.debug(f"oopsie woopsie :3 (channel {channel} does not exist)")
+            await asyncio.gather(*[hashchannel(channel) for channel in channels])
+        await ctx.reply("Done!")
 
 
 # command here
