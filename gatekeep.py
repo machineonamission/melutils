@@ -249,7 +249,7 @@ class GateKeep(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(manage_guild=True)
     @commands.guild_only()
-    async def rescanverification(self, ctx: commands.Context):
+    async def rescanverification(self, ctx: commands.Context, unarchive_all: bool = False):
         """
         Rescans all members of the guild to make sure everyone who needs it has a verification thread.
         """
@@ -271,7 +271,7 @@ class GateKeep(commands.Cog):
                             thread: discord.Thread = await ctx.guild.fetch_channel(vthread)
                             if verified_role not in member.roles:
                                 # unarchive thread cause why not
-                                if thread.archived:
+                                if thread.archived and unarchive_all:
                                     await thread.edit(archived=False)
                             else:
                                 await database.db.execute("DELETE FROM members_to_verify WHERE guild=? AND member=?",
