@@ -1,6 +1,7 @@
 import discord
 import docstring_parser
 from discord.ext import commands
+import embedutils
 
 import config
 
@@ -118,7 +119,7 @@ class HelpCommand(commands.Cog, name="Help Command"):
                 # if there are params found
                 if len(paramtext):
                     # join list and add to help
-                    embed.add_field(name="Parameters", value="\n".join(paramtext), inline=False)
+                    embed = embedutils.add_long_field(embed, name="Parameters", value="\n".join(paramtext), inline=False)
                 # add warning about flag command
                 if flagcommand:
                     embed.add_field(name="Flag Syntax", value="This command uses **flag syntax**. To specify a "
@@ -136,7 +137,6 @@ class HelpCommand(commands.Cog, name="Help Command"):
             # if aliases, add
             if cmd.aliases:
                 embed.add_field(name="Aliases", value=", ".join([config.command_prefix + a for a in cmd.aliases]))
-
             await ctx.reply(embed=embed)
 
 

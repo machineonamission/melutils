@@ -1,4 +1,5 @@
 import copy
+import math
 import re
 import typing
 
@@ -22,7 +23,7 @@ def add_long_field(embed: discord.Embed, name: str, value: str, inline: bool = F
         return embed.add_field(name=name, value=value, inline=inline)
     else:
         for i, section in enumerate(re.finditer('.{1,1024}', value, flags=re.S)):  # split every 1024 chars
-            embed.add_field(name=f"{name} `({i + 1}/{len(value) // 1024})`", value=section[0], inline=inline)
+            embed.add_field(name=f"{name} `({i + 1}/{math.ceil(len(value) / 1024)})`", value=section[0], inline=inline)
     if len(embed) > 6000 and erroriftoolong:
         raise Exception(f"Generated embed exceeds maximum size. ({len(embed)} > 6000)")
     return embed

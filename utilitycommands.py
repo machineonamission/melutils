@@ -189,6 +189,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
         exclude: typing.Tuple[discord.User, ...] = None
         oldest_first: typing.Optional[bool] = None
         clean: bool = True
+        channels: typing.Tuple[discord.TextChannel, ...] = None
+        all_channels:bool = False
 
     @commands.command(aliases=["apurge", "advpurge", "adp", "apg", "ap"])
     @commands.has_permissions(manage_messages=True)
@@ -205,6 +207,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
         :param exclude: One or more members to not delete messages from as a blacklist. Incompatible with `include`.
         :param oldest_first: If set to True, delete messages in oldest->newest order. Defaults to True if after is specified, otherwise False.
         :param clean: Deletes the invoking command before purging and purge success command after 10 seconds.
+        :param channels: A list of channels to purge messages from. Defaults to current channel.
+        :param all_channels: Purge messages from all channels in the guild. Incompatible with `channels`.
         """
 
         def inclfunc(m):
@@ -220,15 +224,30 @@ class UtilityCommands(commands.Cog, name="Utility"):
             check = inclfunc
         if opts.exclude:
             check = exclfunc
+
+        if opts.all_channels and opts.channels:
+            raise commands.errors.UserInputError("Cannot specify both `all_channels` and `channels`.")
         pargs = {}
         if check:
             pargs['check'] = check
         for flag, value in opts:
-            if flag not in ["include", "exclude", "clean"] and value:
+            if flag not in ["include", "exclude", "clean", "channels", "all_channels"] and value:
                 pargs[flag] = value
         if opts.clean:
             await ctx.message.delete()
-        deleted = await ctx.channel.purge(**pargs)
+        if opts.all_channels:
+            channels = ctx.guild.text_channels
+        else:
+            if opts.channels is None:
+                channels = [ctx.channel]
+            else:
+                channels = opts.channels
+
+        logger.debug(channels)
+
+        deleted = []
+        for channel in channels:
+            deleted.append(await channel.purge(**pargs))
         msg = f"{config.emojis['check']} Deleted `{len(deleted)}` message{'' if len(deleted) == 1 else 's'}!"
         if opts.clean:
             await ctx.send(msg, delete_after=10)
