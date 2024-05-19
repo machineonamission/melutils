@@ -190,7 +190,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
         oldest_first: typing.Optional[bool] = None
         clean: bool = True
         channels: typing.Tuple[discord.TextChannel, ...] = None
-        all_channels:bool = False
+        all_channels: bool = False
 
     @commands.command(aliases=["apurge", "advpurge", "adp", "apg", "ap"])
     @commands.has_permissions(manage_messages=True)
@@ -231,7 +231,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
         if check:
             pargs['check'] = check
         for flag, value in opts:
-            if flag not in ["include", "exclude", "clean", "channels", "all_channels"] and value:
+            if flag in ["limit", "before", "after", "around", "oldest_first"]:
                 pargs[flag] = value
         if opts.clean:
             await ctx.message.delete()
@@ -245,16 +245,16 @@ class UtilityCommands(commands.Cog, name="Utility"):
 
         logger.debug(channels)
 
-        deleted = []
+        deleted_count = 0
         for channel in channels:
-            deleted.append(await channel.purge(**pargs))
-        msg = f"{config.emojis['check']} Deleted `{len(deleted)}` message{'' if len(deleted) == 1 else 's'}!"
+            deleted_count += len(await channel.purge(**pargs))
+        msg = f"{config.emojis['check']} Deleted `{deleted_count}` message{'' if deleted_count == 1 else 's'}!"
         if opts.clean:
             await ctx.send(msg, delete_after=10)
         else:
             await ctx.reply(msg)
-        await modlog.modlog(f"{ctx.author.mention} (`{ctx.author}`) purged {len(deleted)} message(s) from "
-                            f"{ctx.channel.mention}", ctx.guild.id, modid=ctx.author.id)
+        await modlog.modlog(f"{ctx.author.mention} (`{ctx.author}`) purged {deleted_count} message(s) from "
+                            f"{channels[0] if len(channels) == 1 else f'{len(channels)} channels'}", ctx.guild.id, modid=ctx.author.id)
 
     class SelectiveCloneSettings(commands.FlagConverter, case_insensitive=True):
         limit: typing.Optional[int] = None
