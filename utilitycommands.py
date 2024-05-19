@@ -246,8 +246,9 @@ class UtilityCommands(commands.Cog, name="Utility"):
         logger.debug(channels)
 
         deleted_count = 0
-        for channel in channels:
-            deleted_count += len(await channel.purge(**pargs))
+        async with ctx.channel.typing():
+            for channel in channels:
+                deleted_count += len(await channel.purge(**pargs))
         msg = f"{config.emojis['check']} Deleted `{deleted_count}` message{'' if deleted_count == 1 else 's'}!"
         if opts.clean:
             await ctx.send(msg, delete_after=10)
