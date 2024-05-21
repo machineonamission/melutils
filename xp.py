@@ -160,7 +160,7 @@ class ExperienceCog(commands.Cog, name="Experience"):
         """
         async with ctx.typing():
             # get text channels and active threads
-            channels = ctx.guild.text_channels + ctx.guild.threads
+            channels = set(ctx.guild.text_channels + list(ctx.guild.threads))
             # GATHER CAN CAUSE 429s NEVER AGAIN
             # prvget = [channel.archived_threads(private=True, joined=True, limit=None).flatten() for channel in
             #           ctx.guild.text_channels]
@@ -171,13 +171,19 @@ class ExperienceCog(commands.Cog, name="Experience"):
             # channels += list(sum([l for l in list_of_lists_of_athreads if isinstance(l, list)], []))
             for channel in ctx.guild.text_channels:
                 try:
-                    channels += [th async for th in channel.archived_threads(private=True, joined=True, limit=None)]
-                except discord.HTTPException:
-                    pass
+                    channels = channels.union(
+                        [th async for th in channel.archived_threads(private=True, joined=True, limit=None)])
+                except discord.HTTPException as e:
+                    await ctx.reply(f"{channel.mention} priv: {e}")
+                    try:
+                        channels = channels.union([ch async for ch in channel.archived_threads(limit=None)])
+                    except discord.HTTPException as e:
+                        await ctx.reply(f"{channel.mention} nonpriv: {e}")
+            for channel in ctx.guild.forums:
                 try:
-                    channels += [ch async for ch in channel.archived_threads(limit=None)]
-                except discord.HTTPException:
-                    pass
+                    channels = channels.union([th async for th in channel.archived_threads(limit=None)])
+                except discord.HTTPException as e:
+                    await ctx.reply(f"{channel.mention} forum: {e}")
             # get exclusions and exempt them from scanning
             async with database.db.execute("SELECT userorchannel FROM guild_xp_exclusions WHERE guild=? "
                                            "AND mod_set=true", (ctx.guild.id,)) as cur:

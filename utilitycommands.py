@@ -237,16 +237,22 @@ class UtilityCommands(commands.Cog, name="Utility"):
             await ctx.message.delete()
         if opts.all_channels:
             msg = await ctx.reply("Fetching all channels and threads...")
-            channels = ctx.guild.text_channels
-            for channel in ctx.guild.text_channels:
-                try:
-                    channels += [th async for th in channel.archived_threads(private=True, joined=True, limit=None)]
-                except discord.HTTPException as e:
-                    await ctx.reply(str(e))
-                try:
-                    channels += [ch async for ch in channel.archived_threads(limit=None)]
-                except discord.HTTPException as e:
-                    await ctx.reply(str(e))
+            async with ctx.channel.typing():
+                channels = set(ctx.guild.text_channels + list(ctx.guild.threads))
+                for channel in ctx.guild.text_channels:
+                    try:
+                        channels = channels.union([th async for th in channel.archived_threads(private=True, joined=True, limit=None)])
+                    except discord.HTTPException as e:
+                        await ctx.reply(f"{channel.mention} priv: {e}")
+                        try:
+                            channels = channels.union([ch async for ch in channel.archived_threads(limit=None)])
+                        except discord.HTTPException as e:
+                            await ctx.reply(f"{channel.mention} nonpriv: {e}")
+                for channel in ctx.guild.forums:
+                    try:
+                        channels = channels.union([th async for th in channel.archived_threads(limit=None)])
+                    except discord.HTTPException as e:
+                        await ctx.reply(f"{channel.mention} forum: {e}")
             await msg.delete()
         else:
             if opts.channels is None:
