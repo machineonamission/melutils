@@ -181,13 +181,13 @@ class UtilityCommands(commands.Cog, name="Utility"):
             await destination.send(f"Cloned {count} message(s) from {target.mention}")
 
     class AdvancedPurgeSettings(commands.FlagConverter, case_insensitive=True):
-        limit: typing.Optional[int] = None
-        before: typing.Optional[typing.Union[discord.Object, datetime]] = None
-        after: typing.Optional[typing.Union[discord.Object, datetime]] = None
-        around: typing.Optional[typing.Union[discord.Object, datetime]] = None
+        limit: int = None
+        before: typing.Union[discord.Object, datetime] = None
+        after: typing.Union[discord.Object, datetime] = None
+        around: typing.Union[discord.Object, datetime] = None
         include: typing.Tuple[discord.User, ...] = None
         exclude: typing.Tuple[discord.User, ...] = None
-        oldest_first: typing.Optional[bool] = None
+        oldest_first: bool = None
         clean: bool = True
         channels: typing.Tuple[discord.TextChannel, ...] = None
         all_channels: bool = False
@@ -217,13 +217,16 @@ class UtilityCommands(commands.Cog, name="Utility"):
         def exclfunc(m):
             return m.author not in opts.exclude
 
-        check = None
+        def excludesystem(m: discord.Message):
+            return not m.is_system()
+
+        check = excludesystem
         if opts.include and opts.exclude:
             raise commands.errors.UserInputError("Include and Exclude cannot both be specified.")
         if opts.include:
-            check = inclfunc
+            check = lambda m: inclfunc(m) and excludesystem(m)
         if opts.exclude:
-            check = exclfunc
+            check = lambda m: exclfunc(m) and excludesystem(m)
 
         if opts.all_channels and opts.channels:
             raise commands.errors.UserInputError("Cannot specify both `all_channels` and `channels`.")
@@ -233,15 +236,14 @@ class UtilityCommands(commands.Cog, name="Utility"):
         for flag, value in opts:
             if flag in ["limit", "before", "after", "around", "oldest_first"]:
                 pargs[flag] = value
-        if opts.clean:
-            await ctx.message.delete()
         if opts.all_channels:
             msg = await ctx.reply("Fetching all channels and threads...")
             async with ctx.channel.typing():
                 channels = set(ctx.guild.text_channels + list(ctx.guild.threads))
                 for channel in ctx.guild.text_channels:
                     try:
-                        channels = channels.union([th async for th in channel.archived_threads(private=True, joined=True, limit=None)])
+                        channels = channels.union(
+                            [th async for th in channel.archived_threads(private=True, joined=True, limit=None)])
                     except discord.HTTPException as e:
                         await ctx.reply(f"{channel.mention} priv: {e}")
                         try:
@@ -260,7 +262,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
             else:
                 channels = opts.channels
 
-        progressmsg = await ctx.reply("Deleting...")
+        if len(channels) > 1:
+            progressmsg = await ctx.reply("Deleting...")
 
         deleted_count = 0
         async with ctx.channel.typing():
@@ -270,12 +273,14 @@ class UtilityCommands(commands.Cog, name="Utility"):
                     rearchive = True
                     relock = channel.locked
                     await channel.edit(archived=False)
-                await progressmsg.edit(content=f"Deleting messages from {channel.mention} ({i+1}/{len(channels)})... "
+                if len(channels) > 1:
+                    await progressmsg.edit(content=f"Deleting messages from {channel.mention} ({i + 1}/{len(channels)})... "
                                                f"Deleted `{deleted_count}` messages so far...")
                 deleted_count += len(await channel.purge(**pargs))
                 if rearchive:
                     await channel.edit(archived=True, locked=relock)
-        await progressmsg.delete()
+        if len(channels) > 1:
+            await progressmsg.delete()
         msg = f"{config.emojis['check']} Deleted `{deleted_count}` message{'' if deleted_count == 1 else 's'}!"
         if opts.clean:
             await ctx.send(msg, delete_after=10)
@@ -284,6 +289,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
         await modlog.modlog(f"{ctx.author.mention} (`{ctx.author}`) purged {deleted_count} message(s) from "
                             f"{channels[0].mention if len(channels) == 1 else f'{len(channels)} channels'}",
                             ctx.guild.id, modid=ctx.author.id)
+        if opts.clean:
+            await ctx.message.delete()
 
     class SelectiveCloneSettings(commands.FlagConverter, case_insensitive=True):
         limit: typing.Optional[int] = None
