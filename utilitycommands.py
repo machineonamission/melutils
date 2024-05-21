@@ -236,26 +236,48 @@ class UtilityCommands(commands.Cog, name="Utility"):
         if opts.clean:
             await ctx.message.delete()
         if opts.all_channels:
+            msg = await ctx.reply("Fetching all channels and threads...")
             channels = ctx.guild.text_channels
+            for channel in ctx.guild.text_channels:
+                try:
+                    channels += [th async for th in channel.archived_threads(private=True, joined=True, limit=None)]
+                except discord.HTTPException as e:
+                    await ctx.reply(str(e))
+                try:
+                    channels += [ch async for ch in channel.archived_threads(limit=None)]
+                except discord.HTTPException as e:
+                    await ctx.reply(str(e))
+            await msg.delete()
         else:
             if opts.channels is None:
                 channels = [ctx.channel]
             else:
                 channels = opts.channels
 
-        logger.debug(channels)
+        progressmsg = await ctx.reply("Deleting...")
 
         deleted_count = 0
         async with ctx.channel.typing():
-            for channel in channels:
+            for i, channel in enumerate(channels):
+                rearchive = False
+                if isinstance(channel, discord.Thread) and channel.archived:
+                    rearchive = True
+                    relock = channel.locked
+                    await channel.edit(archived=False)
+                await progressmsg.edit(content=f"Deleting messages from {channel.mention} ({i+1}/{len(channels)})... "
+                                               f"Deleted `{deleted_count}` messages so far...")
                 deleted_count += len(await channel.purge(**pargs))
+                if rearchive:
+                    await channel.edit(archived=True, locked=relock)
+        await progressmsg.delete()
         msg = f"{config.emojis['check']} Deleted `{deleted_count}` message{'' if deleted_count == 1 else 's'}!"
         if opts.clean:
             await ctx.send(msg, delete_after=10)
         else:
             await ctx.reply(msg)
         await modlog.modlog(f"{ctx.author.mention} (`{ctx.author}`) purged {deleted_count} message(s) from "
-                            f"{channels[0] if len(channels) == 1 else f'{len(channels)} channels'}", ctx.guild.id, modid=ctx.author.id)
+                            f"{channels[0].mention if len(channels) == 1 else f'{len(channels)} channels'}",
+                            ctx.guild.id, modid=ctx.author.id)
 
     class SelectiveCloneSettings(commands.FlagConverter, case_insensitive=True):
         limit: typing.Optional[int] = None
