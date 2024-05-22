@@ -191,6 +191,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
         clean: bool = True
         channels: typing.Tuple[discord.TextChannel, ...] = None
         all_channels: bool = False
+        skip_to_channel: int = None
 
     @commands.command(aliases=["apurge", "advpurge", "adp", "apg", "ap"])
     @commands.has_permissions(manage_messages=True)
@@ -268,6 +269,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
         deleted_count = 0
         async with ctx.channel.typing():
             for i, channel in enumerate(channels):
+                if opts.skip_to_channel and i < opts.skip_to_channel:
+                    continue
                 rearchive = False
                 if isinstance(channel, discord.Thread) and channel.archived:
                     rearchive = True
@@ -276,7 +279,10 @@ class UtilityCommands(commands.Cog, name="Utility"):
                 if len(channels) > 1:
                     await progressmsg.edit(content=f"Deleting messages from {channel.mention} ({i + 1}/{len(channels)})... "
                                                f"Deleted `{deleted_count}` messages so far...")
-                deleted_count += len(await channel.purge(**pargs))
+                try:
+                    deleted_count += len(await channel.purge(**pargs))
+                except e:
+                    await ctx.reply(f"Failed to delete messages from {channel.mention} due to {e}")
                 if rearchive:
                     await channel.edit(archived=True, locked=relock)
         if len(channels) > 1:
