@@ -192,6 +192,42 @@ class UtilityCommands(commands.Cog, name="Utility"):
         channels: typing.Tuple[discord.TextChannel, ...] = None
         all_channels: bool = False
         skip_to_channel: int = None
+        ac_threads_only: bool = False
+        ac_channels_only: bool = False
+
+    message_type_deletable = { # https://discord.com/developers/docs/resources/channel#message-object-message-types
+        0: True,
+        1: False,
+        2: False,
+        3: False,
+        4: False,
+        5: False,
+        6: True,
+        7: True,
+        8: True,
+        9: True,
+        10: True,
+        11: True,
+        12: True,
+        14: False,
+        15: False,
+        16: False,
+        17: False,
+        18: True,
+        19: True,
+        20: True,
+        21: False,
+        22: True,
+        23: True,
+        24: True,
+        25: True,
+        26: True,
+        27: True,
+        28: True,
+        29: True,
+        31: True,
+        32: False
+    }
 
     @commands.command(aliases=["apurge", "advpurge", "adp", "apg", "ap"])
     @commands.has_permissions(manage_messages=True)
@@ -210,52 +246,62 @@ class UtilityCommands(commands.Cog, name="Utility"):
         :param clean: Deletes the invoking command before purging and purge success command after 10 seconds.
         :param channels: A list of channels to purge messages from. Defaults to current channel.
         :param all_channels: Purge messages from all channels in the guild. Incompatible with `channels`.
+        :param skip_to_channel: Skip to a specific channel # when purging all channels. Best used if purge gets interrupted.
+        :param ac_threads_only: Only purge threads.
+        :param ac_channels_only: Only purge channels.
         """
 
-        def inclfunc(m):
-            return m.author in opts.include
+        def inclfunc(m: discord.Message):
+            return (m.author in opts.include
+                    or (m.interaction and m.interaction.user and m.interaction.user in opts.include))
 
-        def exclfunc(m):
-            return m.author not in opts.exclude
+        def exclfunc(m: discord.Message):
+            return not (m.author in opts.exclude
+                        or (m.interaction and m.interaction.user and m.interaction.user in opts.exclude))
 
-        def excludesystem(m: discord.Message):
-            return not m.is_system()
+        def exclude_undeleteable(m: discord.Message):
+            return self.message_type_deletable.get(m.type.value, False)
 
-        check = excludesystem
+        check = exclude_undeleteable
         if opts.include and opts.exclude:
             raise commands.errors.UserInputError("Include and Exclude cannot both be specified.")
         if opts.include:
-            check = lambda m: inclfunc(m) and excludesystem(m)
+            check = lambda m: inclfunc(m) and exclude_undeleteable(m)
         if opts.exclude:
-            check = lambda m: exclfunc(m) and excludesystem(m)
+            check = lambda m: exclfunc(m) and exclude_undeleteable(m)
 
         if opts.all_channels and opts.channels:
             raise commands.errors.UserInputError("Cannot specify both `all_channels` and `channels`.")
+        if not opts.all_channels and (opts.ac_channels_only or opts.ac_threads_only):
+            raise commands.errors.UserInputError("Cannot specify `ac_channels_only` or `ac_threads_only` without "
+                                                 "`all_channels`.")
         pargs = {}
-        if check:
-            pargs['check'] = check
+        pargs['check'] = check
         for flag, value in opts:
             if flag in ["limit", "before", "after", "around", "oldest_first"]:
                 pargs[flag] = value
+        if opts.ac_channels_only and opts.ac_threads_only:
+            raise commands.errors.UserInputError("Cannot specify both `ac_channels_only` and `ac_threads_only`.")
         if opts.all_channels:
             msg = await ctx.reply("Fetching all channels and threads...")
             async with ctx.channel.typing():
-                channels = set(ctx.guild.text_channels + list(ctx.guild.threads))
-                for channel in ctx.guild.text_channels:
-                    try:
-                        channels = channels.union(
-                            [th async for th in channel.archived_threads(private=True, joined=True, limit=None)])
-                    except discord.HTTPException as e:
-                        await ctx.reply(f"{channel.mention} priv: {e}")
+                if not opts.ac_threads_only:
+                    channels = set(ctx.guild.text_channels + list(ctx.guild.threads))
+                else:
+                    channels = set()
+                if not opts.ac_channels_only:
+                    for channel in ctx.guild.text_channels + ctx.guild.forums:
+                        # forums and news cant have private threads
+                        if not isinstance(channel, discord.ForumChannel) and channel.type != discord.ChannelType.news:
+                            try:
+                                channels = channels.union(
+                                    [th async for th in channel.archived_threads(private=True, limit=None)])
+                            except discord.HTTPException as e:
+                                await ctx.reply(f"{channel.mention} priv: {e}")
                         try:
                             channels = channels.union([ch async for ch in channel.archived_threads(limit=None)])
                         except discord.HTTPException as e:
                             await ctx.reply(f"{channel.mention} nonpriv: {e}")
-                for channel in ctx.guild.forums:
-                    try:
-                        channels = channels.union([th async for th in channel.archived_threads(limit=None)])
-                    except discord.HTTPException as e:
-                        await ctx.reply(f"{channel.mention} forum: {e}")
             await msg.delete()
         else:
             if opts.channels is None:
@@ -277,8 +323,9 @@ class UtilityCommands(commands.Cog, name="Utility"):
                     relock = channel.locked
                     await channel.edit(archived=False)
                 if len(channels) > 1:
-                    await progressmsg.edit(content=f"Deleting messages from {channel.mention} ({i + 1}/{len(channels)})... "
-                                               f"Deleted `{deleted_count}` messages so far...")
+                    await progressmsg.edit(
+                        content=f"Deleting messages from {channel.mention} ({i + 1}/{len(channels)})... "
+                                f"Deleted `{deleted_count}` messages so far...")
                 try:
                     deleted_count += len(await channel.purge(**pargs))
                 except e:
