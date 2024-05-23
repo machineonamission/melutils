@@ -134,6 +134,9 @@ async def resize_url(url: str) -> typing.Optional[typing.Tuple[bytes, typing.Lit
 
 
 class FunnyBanner(commands.Cog, name="Funny Banner"):
+    """
+    Commands for choosing a banner from a channel based on reactions. Currently hardcoded to a specific server.
+    """
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 

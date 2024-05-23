@@ -11,6 +11,9 @@ from moderation import update_server_config, mod_only
 
 
 class GateKeep(commands.Cog):
+    """
+    Commands for adding and managing manual new member verification
+    """
     def __init__(self, bot):
         self.bot: commands.Bot = bot
 
