@@ -439,7 +439,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
         files = []
         exts = []
         async with ctx.channel.typing():
-            async for msg in channel.history(limit=None):
+            async for msg in channel.history(limit=None, oldest_first=True):
                 if len(msg.embeds):
                     for embed in msg.embeds:
                         if embed.type in ["image", "video", "audio", "gifv"]:
