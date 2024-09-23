@@ -10,6 +10,7 @@ import typing
 import zipfile
 from collections import defaultdict
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import aiofiles
 import aiohttp
@@ -195,7 +196,7 @@ class UtilityCommands(commands.Cog, name="Utility"):
         ac_threads_only: bool = False
         ac_channels_only: bool = False
 
-    message_type_deletable = { # https://discord.com/developers/docs/resources/channel#message-object-message-types
+    message_type_deletable = {  # https://discord.com/developers/docs/resources/channel#message-object-message-types
         0: True,
         1: False,
         2: False,
@@ -428,11 +429,17 @@ class UtilityCommands(commands.Cog, name="Utility"):
         :param ctx: discord context
         :return: the amount of media
         """
+
+        def get_ext(url: str) -> str:
+            path = urlparse(url).path
+            ext = os.path.splitext(path)[1]
+            return ext
+
         channel = ctx.channel
         files = []
         exts = []
         async with ctx.channel.typing():
-            async for msg in channel.history(limit=None):
+            async for msg in channel.history(limit=None, oldest_first=True):
                 if len(msg.embeds):
                     for embed in msg.embeds:
                         if embed.type in ["image", "video", "audio", "gifv"]:
@@ -440,22 +447,27 @@ class UtilityCommands(commands.Cog, name="Utility"):
                                 return await saveurl(embed.url)
 
                             files.append(retry_coro(save))
-                            exts.append(embed.url.split(".")[-1])
+                            exts.append(get_ext(embed.url))
+                            logger.debug((embed.url, get_ext(embed.url)))
                 if len(msg.attachments):
                     for att in msg.attachments:
                         files.append(retry_coro(att.read))
-                        exts.append(att.url.split(".")[-1])
+                        exts.append(get_ext(att.url))
+                        logger.debug((att.url, get_ext(att.url)))
             if parallel:
                 filebytes = await asyncio.gather(*files)
             else:
                 filebytes = [await dl for dl in files]
             if not os.path.isdir("files"):
                 os.mkdir("files")
+            # yes this is fucking stupid and a log base 10 might be easier but i cba
+            zerofillamount = len(str(len(filebytes)))
+
             with open(f"files/{ctx.channel.name}.zip", "wb+") as archive:
                 with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
                     for i, f in enumerate(filebytes):
                         if f:
-                            zip_archive.writestr(f"{i}.{exts[i]}", bytes(f))
+                            zip_archive.writestr(f"{str(i).zfill(zerofillamount)}{exts[i]}", bytes(f))
                 archive.seek(0, 2)
                 size = archive.tell()
                 archive.seek(0)
