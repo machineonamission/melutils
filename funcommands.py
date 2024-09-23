@@ -6,17 +6,25 @@ import aiohttp
 import discord
 from discord.ext import commands
 
+def allequal(string):
+    return string.count(string[0]) == len(string)
 
 def stringshuffle(string):
+    # dont shuffle empty strings
     if len(string) <= 1:
         return string
-    while (shstring := "".join(random.sample(string, len(string)))) == string:
-        pass
-    return shstring
+    # if string is all the same letter, it cant be shuffled
+    if allequal(string):
+        return string
+    liststr = list(string)
+    shstring = liststr.copy()
+    while shstring == liststr:
+        random.shuffle(shstring)
+    return "".join(shstring)
 
 
 def shuffleword(word, threshold=3):
-    if len(word) < threshold:
+    if len(word) < threshold or allequal(word[1:-1]):
         return stringshuffle(word)
     else:
         return word[0] + stringshuffle(word[1:-1]) + word[-1]
