@@ -422,10 +422,11 @@ class UtilityCommands(commands.Cog, name="Utility"):
     # @commands.cooldown(1, 60 * 60, BucketType.channel)
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def mediazip(self, ctx: commands.Context, parallel: bool = True):
+    async def mediazip(self, ctx: commands.Context, parallel: bool = True, pinnedonly: bool = False):
         """
         zip all media in channel
         :param parallel: download media all at once or one-by-one?
+        :param pinnedonly: only download pinned messages?
         :param ctx: discord context
         :return: the amount of media
         """
@@ -439,7 +440,8 @@ class UtilityCommands(commands.Cog, name="Utility"):
         files = []
         exts = []
         async with ctx.channel.typing():
-            async for msg in channel.history(limit=None, oldest_first=True):
+            async def handle_msg(msg: discord.Message):
+                nonlocal files, exts
                 if len(msg.embeds):
                     for embed in msg.embeds:
                         if embed.type in ["image", "video", "audio", "gifv"]:
@@ -454,6 +456,13 @@ class UtilityCommands(commands.Cog, name="Utility"):
                         files.append(retry_coro(att.read))
                         exts.append(get_ext(att.url))
                         logger.debug((att.url, get_ext(att.url)))
+            if pinnedonly:
+                for msg in await channel.pins():
+                    await handle_msg(msg)
+            else:
+                async for msg in channel.history(limit=None, oldest_first=True):
+                    await handle_msg(msg)
+
             if parallel:
                 filebytes = await asyncio.gather(*files)
             else:
@@ -461,9 +470,9 @@ class UtilityCommands(commands.Cog, name="Utility"):
             if not os.path.isdir("files"):
                 os.mkdir("files")
             # yes this is fucking stupid and a log base 10 might be easier but i cba
-            zerofillamount = len(str(len(filebytes)))
+            zerofillamount = len(str(len(filebytes) - 1))
 
-            with open(f"files/{ctx.channel.name}.zip", "wb+") as archive:
+            with open(f"files/{ctx.channel.name}{'-pins' if pinnedonly else ''}.zip", "wb+") as archive:
                 with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
                     for i, f in enumerate(filebytes):
                         if f:
