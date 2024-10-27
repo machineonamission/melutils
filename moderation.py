@@ -456,7 +456,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             await modlog.modlog(f"{ctx.author.mention} (`{ctx.author}`) set the "
                                 f"ban appeal link to {ban_appeal_link}", ctx.guild.id, modid=ctx.author.id)
 
-    @commands.command(aliases=["b", "eat", "vore"])
+    @commands.command(aliases=["b", "eat", "vore", "banban", "garten"])
     @commands.bot_has_permissions(ban_members=True)
     @mod_only()
     async def ban(self, ctx, members: Greedy[discord.User],
