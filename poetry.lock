@@ -117,7 +117,7 @@ develop = false
 
 [package.source]
 type = "git"
-url = "https://github.com/HexCodeFFF/aioscheduler.git"
+url = "https://github.com/machineonamission/aioscheduler.git"
 reference = "tz_aware"
 resolved_reference = "ee06f2689db223416c9d200c6c58e9bdda97fb83"
 
@@ -384,7 +384,7 @@ tests = ["freezegun", "pytest", "pytest-cov"]
 
 [package.source]
 type = "git"
-url = "https://github.com/HexCodeFFF/humanize.git"
+url = "https://github.com/machineonamission/humanize.git"
 reference = "HEAD"
 resolved_reference = "378143a49dedbb3f95cb9c5d75d1de6de828e015"
 
@@ -784,7 +784,7 @@ develop = false
 
 [package.source]
 type = "git"
-url = "https://github.com/HexCodeFFF/si-prefix.git"
+url = "https://github.com/machineonamission/si-prefix.git"
 reference = "HEAD"
 resolved_reference = "61328d1e61b425dcbe48b03ca711a89bf920c5d3"
 
