@@ -6,7 +6,7 @@ authors = ["machineonamission"]
 license = "GPL-3"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 "discord.py" = "^2.3.2"
 humanize = { git = "https://github.com/machineonamission/humanize.git" }
 si-prefix = { git = "https://github.com/machineonamission/si-prefix.git" }
