@@ -6,8 +6,10 @@ import aiohttp
 import discord
 from discord.ext import commands
 
+
 def allequal(string):
     return string.count(string[0]) == len(string)
+
 
 def stringshuffle(string):
     # dont shuffle empty strings
@@ -250,6 +252,14 @@ class FunCommands(commands.Cog, name="Fun"):
             await ctx.reply("BEGIN DISCUSSION OF", embed=embed)
         else:
             await ctx.reply("Something went wrong...")
+
+    @commands.command(aliases=["randomcase", "mock"])
+    async def mockbob(self, ctx: discord.Context, *, msg: str):
+        """
+        mOcKs YoUr MeSsAgE
+        """
+        await ctx.reply(''.join([c.upper() if bool(random.getrandbits(1)) else c.lower() for c in msg]))
+
 
 '''
 Steps to convert:
