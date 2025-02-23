@@ -173,11 +173,21 @@ async def on_warn(member: discord.Member, issued_points: float):
     else:
         # select all from punishments where the sum of warnings in the punishment range fits the warn_count thing
         # this thing is a mess but should return 1 or 0 punishments if needed
-        monstersql = "SELECT *, (SELECT SUM(points) FROM warnings WHERE (warn_timespan=0 OR (" \
-                     ":now-warn_timespan)<warnings.issuedat) AND warnings.server=:guild AND user=:user AND " \
-                     "deactivated=0) pointstotal FROM auto_punishment WHERE pointstotal >= warn_count AND " \
-                     "warn_count > (pointstotal-:pointsjustgained) AND guild=:guild ORDER BY punishment_duration," \
-                     "punishment_type DESC LIMIT 1 "
+        monstersql = """
+        SELECT *,
+               (SELECT SUM(points)
+                FROM warnings
+                WHERE (warn_timespan = 0 OR (:now - warn_timespan) < warnings.issuedat)
+                  AND warnings.server = :guild
+                  AND user = :user
+                  AND deactivated = 0) pointstotal
+        FROM auto_punishment
+        WHERE pointstotal >= warn_count
+          AND warn_count > (pointstotal - :pointsjustgained)
+          AND guild = :guild
+        ORDER BY punishment_duration, punishment_type DESC
+        LIMIT 1 
+        """
         params = {"now": datetime.now(tz=timezone.utc).timestamp(), "pointsjustgained": issued_points,
                   "guild": member.guild.id, "user": member.id}
         async with database.db.execute(monstersql, params) as cur:
