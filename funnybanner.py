@@ -151,7 +151,7 @@ class FunnyBanner(commands.Cog, name="Funny Banner"):
                 (0 if downvote_reactions is None else downvote_reactions.count)
         # msgscore is used as a sorting function. the negative timestamp means that for duplicate scores itll choose
         # the highest of the second key, which for negative datetime, will be the oldest.
-        return score, msg.created_at.timestamp() * -1
+        return score, msg.created_at.timestamp()
 
     # command here
     @commands.command()
