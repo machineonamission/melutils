@@ -254,14 +254,14 @@ class FunCommands(commands.Cog, name="Fun"):
             await ctx.reply("Something went wrong...")
 
     @commands.command(aliases=["randomcase", "mock"])
-    async def mockbob(self, ctx: discord.Context, *, msg: str):
+    async def mockbob(self, ctx: commands.Context, *, msg: str):
         """
         mOcKs YoUr MeSsAgE
         """
         await ctx.reply(''.join([c.upper() if bool(random.getrandbits(1)) else c.lower() for c in msg]))
 
     @commands.command()
-    async def xckd(self, ctx: discord.Context, number: int):
+    async def xckd(self, ctx: commands.Context, number: int):
         """
         sends the xkcd comic with the given number
         """
