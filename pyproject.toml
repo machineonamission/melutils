@@ -4,6 +4,7 @@ version = "1.0.0"
 description = "a discord bot mainly for moderation"
 authors = ["machineonamission"]
 license = "GPL-3"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -21,8 +22,6 @@ tqdm = "^4.66.1"
 Faker = "^12.0.0"
 openpyxl = "^3.1.2"
 ImageHash = "^4.2.1"
-
-[tool.poetry.dev-dependencies]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
