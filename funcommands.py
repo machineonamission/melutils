@@ -268,7 +268,7 @@ class FunCommands(commands.Cog, name="Fun"):
         await ctx.reply(f"https://xkcd.com/{number}")
     
     @commands.command(aliases=["eow", "mrrp", "rrp"])
-    async def meow(self, ctx: command.Context):
+    async def meow(self, ctx: commands.Context):
         """
         meows
         """
