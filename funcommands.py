@@ -266,6 +266,23 @@ class FunCommands(commands.Cog, name="Fun"):
         sends the xkcd comic with the given number
         """
         await ctx.reply(f"https://xkcd.com/{number}")
+    
+    @command.command(aliases=["eow", "mrrp", "rrp"])
+    async def meow(self, ctx: command.Context):
+        """
+        meows
+        """
+        min = 1
+        max = 10
+
+        options: dict[str, float] = {"meow": 0.3, "mrrp": 0.3, "mraow": 0.4, "mrow": 0.4, "mew": 0.2}
+        
+        out = ' '.join(
+            random.choices(list(options.keys()), list(options.values()), k=random.randrange(min, max))
+        )
+
+        await ctx.reply(out)
+        
 
 
 '''
