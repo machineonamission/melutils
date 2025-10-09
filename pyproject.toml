@@ -8,20 +8,20 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
-"discord.py" = "^2.3.2"
+"discord.py" = "^2.6.4"
 humanize = { git = "https://github.com/machineonamission/humanize.git" }
-si-prefix = { git = "https://github.com/machineonamission/si-prefix.git" }
+#si-prefix = { git = "https://github.com/machineonamission/si-prefix.git" }
 coloredlogs = "^15.0.1"
-aiosqlite = "^0.20.0"
+aiosqlite = "^0.21.0"
 aioscheduler = { git = "https://github.com/machineonamission/aioscheduler.git", branch = "tz_aware" }
-docstring-parser = "^0.15"
+docstring-parser = "^0.17"
 emojis = "^0.7.0"
-aiofiles = "^23.2.1"
-Pillow = "^9.0.0"
-tqdm = "^4.66.1"
-Faker = "^12.0.0"
+aiofiles = "^25.1.0"
+Pillow = "^11.3.0"
+tqdm = "^4.67.1"
+Faker = "^37.11.0"
 openpyxl = "^3.1.2"
-ImageHash = "^4.2.1"
+ImageHash = "^4.3.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
