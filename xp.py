@@ -321,8 +321,8 @@ class ExperienceCog(commands.Cog, name="Experience"):
         embed.add_field(name="XP", value=f"{exp:,.100g}", inline=True)
         embed.add_field(name="Level", value=f"{level}", inline=True)
         embed.add_field(name="Rank", value=f"{rank}", inline=True)
-        embed.add_field(name="Progress To Next Level", value=f"{si_prefix.si_format(xp_for_current_level)} `{bar}` "
-                                                             f"{si_prefix.si_format(xp_for_next_level)}",
+        embed.add_field(name="Progress To Next Level", value=f"{si_prefix.si_prefix(xp_for_current_level)} `{bar}` "
+                                                             f"{si_prefix.si_prefix(xp_for_next_level)}",
                         inline=False)
         embed.add_field(name="What?", value="For info on how MelUtils XP works: run `m.xpinfo`")
 
@@ -397,7 +397,7 @@ class ExperienceCog(commands.Cog, name="Experience"):
                 text += f"**#{rank}** <@{user}>\n" \
                         f"Level **{xp_to_level(experience, change_per_level)}** " \
                         f"`{progress_bar(experience, topxp, 20)}` " \
-                        f"**{si_prefix.si_format(experience)}** XP\n"
+                        f"**{si_prefix.si_prefix(experience)}** XP\n"
             embed.add_field(name="Leaderboard", value=text)
         else:
             embed.add_field(name="No users found!",
