@@ -26,6 +26,7 @@ from moderation import ModerationCog
 from modlog import ModLogInitCog
 from nitroroles import NitroRolesCog
 from threadutils import ThreadUtilsCog
+from typeshit import TypeShit
 from utilitycommands import UtilityCommands
 from wordsinthebible import BibleCog
 from xp import ExperienceCog
@@ -117,6 +118,7 @@ class MyBot(commands.Bot):
         await bot.add_cog(GateKeep(bot))
         await bot.add_cog(BibleCog(bot))
         await bot.add_cog(ImageSetCog(bot))
+        await bot.add_cog(TypeShit(bot))
         await scheduler.start()
 
 
