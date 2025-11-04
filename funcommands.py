@@ -41,6 +41,14 @@ randomwikiurl = "https://en.wikipedia.org/w/api.php?action=query&format=json&use
                 "rop=original&grnnamespace=0&grnlimit=1"
 
 
+async def find_message(ctx: commands.Context):
+    if ctx.message.reference:
+        msg = ctx.message.reference.resolved
+    else:
+        msg = [m async for m in ctx.channel.history(limit=1, before=ctx.message)][0]
+    return msg.content
+
+
 class FunCommands(commands.Cog, name="Fun"):
     """
     commands for entertainment
@@ -80,9 +88,7 @@ class FunCommands(commands.Cog, name="Fun"):
         :param text: the text to "owoify". defaults to last message in channel
         :return: owoified text
         """
-        if text is None:
-            messages = await ctx.channel.history(limit=1, before=ctx.message).flatten()
-            text = messages[0].content
+        text = text or await find_message(ctx)
         await ctx.reply(
             text.replace("r", "w").replace("R", "W").replace("l", "w").replace("L", "W").replace("@", "\\@") + " owo~")
 
@@ -94,9 +100,7 @@ class FunCommands(commands.Cog, name="Fun"):
         :param text: the text to "sparkle". defaults to last message in channel
         :return: sparkled text
         """
-        if text is None:
-            messages = await ctx.channel.history(limit=1, before=ctx.message).flatten()
-            text = messages[0].content
+        text = text or await find_message(ctx)
         await ctx.reply(f"✨ *{' '.join(text)}* ✨")
 
     @commands.command()
@@ -107,39 +111,33 @@ class FunCommands(commands.Cog, name="Fun"):
         :param text: the text to "clap". defaults to last message in channel
         :return: clapped text
         """
-        if text is None:
-            messages = await ctx.channel.history(limit=1, before=ctx.message).flatten()
-            text = messages[0].content
+        text = text or await find_message(ctx)
         await ctx.reply("👏".join(text.split(" ")))
 
     @commands.command()
-    async def regional(self, ctx, *, msg=None):
+    async def regional(self, ctx, *, text=None):
         """
         make your text 🇱​🇦​🇷​🇬​🇪
         :param ctx:
-        :param msg: the text to make large
+        :param text: the text to make large
         :return: the larged text
         """
-        if msg is None:
-            messages = await ctx.channel.history(limit=1, before=ctx.message).flatten()
-            msg = messages[0].content
+        text = text or await find_message(ctx)
         """Replace letters with regional indicator emojis"""
-        msg = list(msg)
-        regional_list = [self.regionals[x.lower()] if x.isalnum() or x in ["!", "?"] else x for x in msg]
+        text = list(text)
+        regional_list = [self.regionals[x.lower()] if x.isalnum() or x in ["!", "?"] else x for x in text]
         regional_output = '\u200b'.join(regional_list)
         await ctx.reply(regional_output)
 
     @commands.command(aliases=["8ball", "magicball", "balls"])
-    async def ball(self, ctx, *, question=None):
+    async def ball(self, ctx: commands.Context, *, question=None):
         """
         ask the magic 8ball a question 🎱
         :param ctx:
         :param question: the question to ask, defaults to last messagein channel
         :return: its answer
         """
-        if question is None:
-            messages = await ctx.channel.history(limit=1, before=ctx.message).flatten()
-            question = messages[0].content
+        question = question or await find_message(ctx)
         options = [
             "It is certain.",
             "It is decidedly so.",
@@ -229,6 +227,7 @@ class FunCommands(commands.Cog, name="Fun"):
         :return: yuro txet
         """
         assert threshold >= 0
+        text = text or await find_message(ctx)
         await ctx.reply(wordshuffle(text, threshold))
 
     @commands.command(
@@ -254,11 +253,12 @@ class FunCommands(commands.Cog, name="Fun"):
             await ctx.reply("Something went wrong...")
 
     @commands.command(aliases=["randomcase", "mock"])
-    async def mockbob(self, ctx: commands.Context, *, msg: str):
+    async def mockbob(self, ctx: commands.Context, *, text: str):
         """
         mOcKs YoUr MeSsAgE
         """
-        await ctx.reply(''.join([c.upper() if bool(random.getrandbits(1)) else c.lower() for c in msg]))
+        text = text or await find_message(ctx)
+        await ctx.reply(''.join([c.upper() if bool(random.getrandbits(1)) else c.lower() for c in text]))
 
     @commands.command()
     async def xkcd(self, ctx: commands.Context, number: int):
@@ -266,7 +266,7 @@ class FunCommands(commands.Cog, name="Fun"):
         sends the xkcd comic with the given number
         """
         await ctx.reply(f"https://xkcd.com/{number}")
-    
+
     @commands.command(aliases=["eow", "mrrp", "rrp"])
     async def meow(self, ctx: commands.Context):
         """
@@ -276,13 +276,12 @@ class FunCommands(commands.Cog, name="Fun"):
         max = 10
 
         options: dict[str, float] = {"meow": 0.3, "mrrp": 0.3, "mraow": 0.4, "mrow": 0.4, "mew": 0.2}
-        
+
         out = ' '.join(
             random.choices(list(options.keys()), list(options.values()), k=random.randrange(min, max))
         )
 
         await ctx.reply(out)
-        
 
 
 '''
