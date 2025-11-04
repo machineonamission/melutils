@@ -36,10 +36,7 @@ def wordshuffle(words, threshold=3):
     return re.sub(r"\w+", lambda x: shuffleword(x.group(0), threshold), words)
 
 
-randomwikiurl = "https://en.wikipedia.org/w/api.php?action=query&format=json&uselang=en&prop=extracts%7Cinfo%7Cpageim" \
-                "ages&generator=random&redirects=1&utf8=1&formatversion=latest&exintro=1&explaintext=1&inprop=url&pip" \
-                "rop=original&grnnamespace=0&grnlimit=1"
-
+randomwikiurl = "https://en.wikipedia.org/w/api.php?action=query&format=json&uselang=en&prop=extracts%7Cinfo%7Cpageimages&generator=random&redirects=1&utf8=1&formatversion=2&exintro=1&explaintext=1&inprop=url&piprop=original&grnnamespace=0&grnlimit=1"
 
 async def find_message(ctx: commands.Context):
     if ctx.message.reference:
@@ -236,8 +233,11 @@ class FunCommands(commands.Cog, name="Fun"):
     async def discussiongenerator(self, ctx: commands.Context):
         r: dict
         async with aiohttp.ClientSession() as session:
-            async with session.get(randomwikiurl) as resp:
-                resp.raise_for_status()
+            async with session.get(randomwikiurl, headers={'User-Agent': 'MelUtils'}) as resp:
+                try:
+                    resp.raise_for_status()
+                except Exception as e:
+                    raise e from Exception(await resp.text())
                 r = await resp.json()
         if r:
             embed = discord.Embed(
