@@ -23,10 +23,3 @@ dependencies = [
     "humanize @ git+https://github.com/machineonamission/humanize.git",
     "aioscheduler @ git+https://github.com/machineonamission/aioscheduler.git@tz_aware",
 ]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.uv]
-package = false
