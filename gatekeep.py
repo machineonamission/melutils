@@ -241,14 +241,6 @@ class GateKeep(commands.Cog):
         else:
             await ctx.reply(f"❌ Unable to verify. Are you sending this inside the member's verification thread?")
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before: discord.Member, after: discord.Member):
-        if after.guild.id == 829973626442088468:  # hos
-            if len(after.roles) > len(before.roles):  # gained new roles
-                if after.guild.get_role(955703823500988426) not in after.roles:  # not verified
-                    await after.remove_roles(*[role for role in after.roles if role.is_assignable()],
-                                             atomic=False)  # remove roles
-
     @commands.command()
     @commands.has_guild_permissions(manage_guild=True)
     @commands.guild_only()
