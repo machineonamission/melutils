@@ -37,7 +37,7 @@ for f in glob.glob(f'{config.temp_dir}*'):
     os.remove(f)
 # init db if not ready
 logger.debug("checking db")
-con = sqlite3.connect("database.sqlite")
+con = sqlite3.connect("persist/database.sqlite")
 cur = con.execute("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name != 'sqlite_master' AND name != "
                   "'sqlite_sequence'")
 numoftables = cur.fetchone()[0]

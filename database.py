@@ -7,5 +7,5 @@ db: typing.Optional[aiosqlite.Connection] = None
 
 async def create_db():
     global db
-    db = await aiosqlite.connect("database.sqlite")
+    db = await aiosqlite.connect("persist/database.sqlite")
     return db

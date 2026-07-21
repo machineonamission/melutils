@@ -1,5 +1,6 @@
 import glob
 import io
+import json
 import os.path
 import re
 import typing
@@ -11,6 +12,8 @@ import openpyxl
 import openpyxl.cell
 from discord.ext import commands
 
+from funcommands import find_message
+
 
 async def request(url: str):
     async with aiohttp.ClientSession(headers={'Connection': 'keep-alive'}) as session:
@@ -20,21 +23,19 @@ async def request(url: str):
 
 
 async def parse_bible():
-    if os.path.isfile("bible.sqlite"):
-        os.remove("bible.sqlite")
-    db = await aiosqlite.connect("bible.sqlite")
+    if os.path.isfile("persist/bible.sqlite"):
+        os.remove("persist/bible.sqlite")
+    db = await aiosqlite.connect("persist/bible.sqlite")
     await db.execute("""
-create table verses
+create virtual table verses using fts5
 (
-    verse      string,
-    short_trns string,
-    content    string,
-    constraint table_name_pk
-        primary key (verse, short_trns)
+    verse UNINDEXED,
+    short_trns UNINDEXED,
+    content,
 );
 """)
-    if os.path.isfile("bibles.xlsx"):
-        workbook = openpyxl.load_workbook(open("bibles.xlsx", "rb"), read_only=True)
+    if os.path.isfile("persist/bibles.xlsx"):
+        workbook = openpyxl.load_workbook(open("persist/bibles.xlsx", "rb"), read_only=True)
     else:
         biblebytes = await request("https://openbible.com/xls/bibles.xlsx")
         workbook = openpyxl.load_workbook(io.BytesIO(biblebytes), read_only=True)
@@ -64,25 +65,27 @@ create table verses
     workbook.close()
     await db.commit()
 
+def to_letter_grade(score: float, scale: int = 100) -> str:
+    """
+    Converts a numeric score to an American letter grade.
+    `scale` should be 100 (e.g. 87) or 1 (e.g. 0.87) depending on your input.
+    """
+    if scale == 1:
+        score *= 100
 
-globword = """
-WHERE content GLOB ('*' || ?1 || '*')
-  AND (
-            content GLOB (?1) OR
-            content GLOB (?1 || '[^a-zA-Z0-9_]*') OR
-            content GLOB ('*[^a-zA-Z0-9_]' || ?1) OR
-            content GLOB ('*[^a-zA-Z0-9_]' || ?1 || '[^a-zA-Z0-9_]*')
-    )
-"""
-likeptn = "WHERE content LIKE ('%' || ? || '%')"
-
-
-def insensitive_glob(pattern):
-    def either(c):
-        return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
-
-    return ''.join(map(either, glob.escape(pattern)))
-
+    if score >= 97: return "A+"
+    elif score >= 93: return "A"
+    elif score >= 90: return "A-"
+    elif score >= 87: return "B+"
+    elif score >= 83: return "B"
+    elif score >= 80: return "B-"
+    elif score >= 77: return "C+"
+    elif score >= 73: return "C"
+    elif score >= 70: return "C-"
+    elif score >= 67: return "D+"
+    elif score >= 63: return "D"
+    elif score >= 60: return "D-"
+    else: return "F"
 
 class BibleCog(commands.Cog, name="Words in the Bible"):
     """
@@ -101,7 +104,7 @@ class BibleCog(commands.Cog, name="Words in the Bible"):
         :param ctx:
         :param overwrite: set to true to make database even if it exists
         """
-        if os.path.isfile("bible.sqlite") and not overwrite:
+        if os.path.isfile("persist/bible.sqlite") and not overwrite:
             await ctx.reply("The database already exists. Run `m.buildbibledb y` to overwrite it.")
         else:
             msg = await ctx.reply("This will take a moment and may interrupt bot activities...")
@@ -112,27 +115,38 @@ class BibleCog(commands.Cog, name="Words in the Bible"):
 
     # command here
     @commands.command()
-    async def wordsinbible(self, ctx: commands.Context, *, words: str):
+    async def wordsinbible(self, ctx: commands.Context, *, words: str=None):
         """show which words of a phrase are in the bible"""
-        if not os.path.isfile("bible.sqlite"):
+        if not os.path.isfile("persist/bible.sqlite"):
             await ctx.reply("Bible DB not setup, please run `m.buildbibledb`.")
             return
+        words = words or await find_message(ctx)
         words = discord.utils.escape_markdown(words)
-        uniquewords = set(re.findall("[a-zA-Z]+", words))
-        iswordinbible = {}
-        async with aiosqlite.connect("bible.sqlite") as biblecon:
-            for word in uniquewords:
-                async with biblecon.execute(f"SELECT * FROM verses {globword} LIMIT 1",
-                                            (insensitive_glob(word),)) as cur:
-                    res = await cur.fetchone()
-                iswordinbible[word] = res is not None
-        inbible = set(filter(lambda w: w in iswordinbible and iswordinbible[w], uniquewords))
+        uniquewords = set(re.findall(r"\b\w+\b", words))
+        words_json = json.dumps(list(uniquewords))
+
+        query = """
+                SELECT value
+                FROM json_each(?)
+                WHERE EXISTS (SELECT 1
+                              FROM verses
+                              WHERE verses MATCH '"' || value || '"');
+                """
+
+        async with aiosqlite.connect("persist/bible.sqlite") as db:
+            async with db.execute(query, (words_json,)) as cursor:
+                rows = await cursor.fetchall()
+
+                # Extract the matched words from the returned tuples
+                iswordinbible = [row[0] for row in rows]
+
+        inbible = set(iswordinbible)
         notinbible = uniquewords - inbible
 
         if len(notinbible) == 0:
-            await ctx.reply(f"🙏 all of these words are in the bible")
+            await ctx.reply(f"🙏 all of these words are in the bible. A+ in holiness!")
         elif len(inbible) == 0:
-            await ctx.reply(f"😈 none of these words are in the bible")
+            await ctx.reply(f"😈 none of these words are in the bible. F in holiness...")
         else:
 
             def boldnonbiblicalwords(w: re.Match):
@@ -143,26 +157,32 @@ class BibleCog(commands.Cog, name="Words in the Bible"):
                     return w
 
             out = re.sub("[a-zA-Z]+", boldnonbiblicalwords, words, flags=re.RegexFlag.IGNORECASE)
-
-            await ctx.reply(f"{len(inbible)}/{len(uniquewords)} ({round((len(inbible) / len(uniquewords)) * 100)}%)"
-                            f" are in the bible.\n"
-                            f"found {len(notinbible)} word{'' if len(notinbible) == 1 else 's'} not in the bible:"
-                            f"\n{out}")
+            percent = round((len(inbible) / len(uniquewords)) * 100)
+            grade = to_letter_grade(percent)
+            await ctx.reply(f"{len(inbible)}/{len(uniquewords)} ({round((len(inbible) / len(uniquewords)) * 100)}%) "
+                            f"are in the bible.\n"
+                            f"found {len(notinbible)} word{'' if len(notinbible) == 1 else 's'} not in the bible:\n"
+                            f"{out}"
+                            f"\n\nYou got a {grade} in holiness.")
 
     @commands.command()
-    async def findinbible(self, ctx: commands.Context, word_boundary: typing.Optional[bool] = True,
+    async def findinbible(self, ctx: commands.Context,
                           limit: typing.Optional[int] = 1, *,
                           words: str):
         """find a specific phrase in the bible"""
-        if not os.path.isfile("bible.sqlite"):
+        if not os.path.isfile("persist/bible.sqlite"):
             await ctx.reply("Bible DB not setup, please run `m.buildbibledb`.")
             return
         assert 0 < limit < 6
-        async with aiosqlite.connect("bible.sqlite") as biblecon:
-            async with biblecon.execute("SELECT verse, short_trns, content FROM verses "
-                                        f"{globword if word_boundary else likeptn} "
-                                        f"GROUP BY verse ORDER BY random() LIMIT ?2",
-                                        (insensitive_glob(words), limit)) as cur:
+        query = """
+                SELECT verse, short_trns, content
+                FROM verses
+                WHERE content MATCH '"' || ? || '"'
+                GROUP BY verse
+                ORDER BY random() LIMIT ? \
+                """
+        async with aiosqlite.connect("persist/bible.sqlite") as biblecon:
+            async with biblecon.execute(query, (words, limit)) as cur:
                 res = await cur.fetchall()
         if not res:
             await ctx.reply(f"Could not find this in the bible.")
@@ -181,14 +201,28 @@ class BibleCog(commands.Cog, name="Words in the Bible"):
     @commands.command()
     async def countinbible(self, ctx: commands.Context, *, words: str):
         """count how many times a phrase occurs among 14 bible translations"""
-        if not os.path.isfile("bible.sqlite"):
+        if not os.path.isfile("persist/bible.sqlite"):
             await ctx.reply("Bible DB not setup, please run `m.buildbibledb`.")
             return
-        async with aiosqlite.connect("bible.sqlite") as biblecon:
-            async with biblecon.execute(
-                    "SELECT SUM((LENGTH(content) - LENGTH(REPLACE(LOWER(content), LOWER(?), ''))) / "
-                    "LENGTH(?)) FROM verses",
-                    (words, words)) as cur:
+        query = """
+        SELECT SUM(
+                -- How many times `phrase` occurs in this row's content:
+                   (
+                       -- 1. Measure the row's content length.
+                       LENGTH(LOWER(content))
+                           -- 2. Subtract the length after removing every instance of `phrase`.
+                           --    This gives the total number of characters removed.
+                           - LENGTH(REPLACE(LOWER(content), LOWER(?), ''))
+                   )
+                   -- 3. Divide by the phrase's length to get a count of occurrences.
+                   / LENGTH(?)
+               )
+        FROM verses
+        -- Fast pre-filter
+        WHERE verses MATCH '"' || ? || '"' \
+        """
+        async with aiosqlite.connect("persist/bible.sqlite") as biblecon:
+            async with biblecon.execute(query, (words, words, words)) as cur:
                 sm = (await cur.fetchone())[0]
         await ctx.reply(f"Found this phrase {sm} time{'' if sm == 1 else 's'} among 14 English Bible translations.\n"
                         f"Average of {round(sm / 14, 1)} per translation. See `m.findinbible` to see what they are.")
